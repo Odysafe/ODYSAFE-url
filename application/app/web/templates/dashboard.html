@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block title %}{{_a("3efacb0d52888be2")}}{% endblock %}
+{% block heading %}{{_i("da4ae1fdbd30a273")}}{% endblock %}
+{% block content %}
+<section class="cti-hero">
+  <img src="/static/cti/logo-c.png" alt="" class="cti-hero-logo">
+  <p class="eyebrow">{{_i("100b3f086370d13d")}}</p>
+  <h2>{{_i("df0e001decebb339")}}</h2>
+  <p>{{_i("073a9a0f869857c4")}}</p>
+  {% if active_session %}<div class="busy-panel"><div><b>{{_i("42ed4d700e9b5f17")}}</b><code>{{active_session.target_url}}</code><span class="badge {{active_session.status}}">{{ui(active_session.status)}}</span></div><a class="button" href="/sessions">{{_i("2f9e89337e91777d")}}</a></div>{% endif %}
+  <div class="launch-workspace"><form method="post" action="/sessions/start" class="cti-launch-form">
+    <input type="hidden" name="csrf" value="{{csrf}}">
+    <div class="cti-url-entry">
+      <label class="sr-only" for="target-url">{{_i("01ba1a99f0972ddd")}}</label>
+      <input id="target-url" name="url" type="url" required maxlength="2048" placeholder="{{_a("283add6ada038c26")}}" autocomplete="url" {% if active_session %}disabled{% endif %} data-i18n-placeholder="https://exemple.org">
+      <button class="primary" type="submit" {% if active_session %}disabled{% endif %}>{{_i("f9ecde2b0cd1d5dc") if active_session else _i("ee692f8933c5876b")}}</button>
+    </div>
+    <div class="cti-mode-row" role="group" aria-label="{{_a("2282c8d8230c6141")}}" data-i18n-aria-label="Mode de capture">
+      <label><input type="radio" name="mode" value="automatic" checked {% if active_session %}disabled{% endif %}><span><b>{{_i("89bd8db002892255")}}</b><small>{{_i("5e5ec0fa05ac8e75")}}</small></span></label>
+      <label><input type="radio" name="mode" value="interactive" {% if active_session %}disabled{% endif %}><span><b>{{_i("8bccd746c23ed163")}}</b><small>{{_i("670f63ffd7f2d9af")}}</small></span></label>
+    </div>
+    <details class="cti-capture-options">
+      <summary>{{_i("402e4948706d8d6c")}}</summary>
+      <div class="launch-options">
+        <label>{{_i("9f7cfa4ec66f5758")}}<select name="network_policy" {% if active_session %}disabled{% endif %}><option value="fixture" {% if not public_capture %}selected{% endif %}>{{_i("92ecf1e7701c89be")}}</option><option value="internet" {% if public_capture %}selected{% else %}disabled{% endif %}>{{_i("5852c37e63184156")}}{{'' if public_capture else _i("26db1443e6c6e5cd")}}</option></select></label>
+        <label>{{_i("e267d343821f264e")}}<select name="profile" {% if active_session %}disabled{% endif %}><option value="desktop">Desktop</option><option value="mobile">Mobile</option></select></label>
+        <label>{{_i("c9e8cb5dd878f26f")}}<select name="duration_mode" data-duration-mode {% if active_session %}disabled{% endif %}><option value="preset">{{_i("bd38cc5ed90dd10e")}}</option><option value="custom">{{_i("c338d18b1f0dff74")}}</option></select></label><label data-duration-preset>{{_i("bd38cc5ed90dd10e")}}<select name="timeout_seconds" {% if active_session %}disabled{% endif %}><option value="60">{{_i("6534dc717942a2fb")}}</option><option value="90" selected>{{_i("519fb6070a9e8bb7")}}</option><option value="300">5 minutes</option><option value="900">15 minutes</option><option value="1800">30 minutes</option></select></label><label data-duration-custom hidden>{{_i("9af55e21276415ec")}}<span class="duration-custom"><input type="number" name="custom_duration" placeholder="{{_a("bf2c180aea7d06db")}}" value="5" min="1" max="480" disabled data-i18n-placeholder="Ex. 5"><select name="duration_unit" disabled><option value="seconds">{{_i("05f7175245e0d482")}}</option><option value="minutes" selected>minutes</option><option value="hours">{{_i("4c65817d66b2de01")}}</option></select></span><small>{{_i("f6fea56e2cb3e35b")}}</small></label>
+      </div>
+    </details>
+    <p class="cti-policy"><span class="status-dot"></span>{{_i("bd61eb534378dcec") if public_capture else _i("d57502e0316b427b")}} {{_i("4d523fb50dba3fc6")}}</p>
+  </form>
+  <aside class="launch-context" aria-label="{{_a("07cd4a974aac599d")}}" data-i18n-aria-label="Contexte de la prochaine capture">
+    <div class="launch-context-title"><p class="eyebrow">{{_i("4dac19e4f796f59d")}}</p><h3>{{_i("d1011d30218f24d0")}}</h3></div>
+    <dl><div><dt>{{_i("e267d343821f264e")}}</dt><dd data-launch-profile>Desktop</dd></div><div><dt>{{_i("e5f505e6a782d913")}}</dt><dd data-launch-network>{{_i("c37ad1b104a87810") if public_capture else _i("cf733a7700577c77")}}</dd></div><div><dt>{{_i("871277d8e62e4764")}}</dt><dd data-launch-protection>{{_i("b3986b3cbda2e160") if public_capture else _i("3e22c314e5972e39")}}</dd></div></dl>
+    <div class="launch-analysis-counts"><span><b>{{active_rules}}</b><small>{{_i("5923e6298244f70d")}}</small></span><span><b>{{active_iocs}}</b><small>{{_i("c74e60001e9ec732")}}</small></span><span><b>{{dns_providers|selectattr('enabled')|list|length}} / {{dns_providers|length}}</b><small>{{_i("0e92d83a92b58988")}}</small></span></div>
+    <details><summary>{{_i("ae6253265a1adcf6")}}</summary><p>{% for provider in dns_providers if provider.enabled %}{{provider.name}}{{', ' if not loop.last}}{% else %}{{_i("33466a6eebbcb6d5")}}{% endfor %}</p><small>{{_i("24ede51bc5f1cb4d")}}</small></details>
+  </aside></div>
+</section>
+
+<section class="cti-dashboard-grid">
+  <article class="panel cti-recent">
+    <div class="panel-head"><div><p class="eyebrow">{{_i("0eb0dbb19b1fc5fd")}}</p><h2>{{_i("35f6c50706815fb6")}}</h2></div><a href="/scans">{{_i("ff8a99c5c6f6da80")}}</a></div>
+    {% if recent %}<div class="recent-list">{% for scan in recent[:6] %}<a href="/scans/{{scan.scan_id}}"><span class="badge {{scan.capture_status}}">{{ui(scan.capture_status)}}</span><span><b>{{scan.host or _i("416b5f026c329886")}}</b><small>{{scan.submitted_url or _i("418c492d733cc827")}}</small></span><span class="recent-meta">{{scan.request_count}} req. · {{scan.detection_count}} {{_i("bcb2f94b7f7552f2")}}</span></a>{% endfor %}</div>{% else %}<div class="empty">{{_i("1f6bd2ab02e1ac1f")}}</div>{% endif %}
+  </article>
+  <aside class="panel cti-service-summary">
+    <p class="eyebrow">{{_i("b5f6950bf7d8afba")}}</p><h2>{{_i("32bf2a2076e6cd31")}}</h2>
+    <ul><li><span class="status-dot"></span>{{_i("5e8c853414be51a3")}}</li><li><span class="status-dot"></span>{{_i("6891cbd81b7b0b7c")}}</li><li><span class="status-dot"></span>{{_i("2ac7e7de269ce8f7") if public_capture else _i("7ce7c05ecbc5f824")}}</li></ul>
+    <a class="button" href="/sessions">{{_i("2710b817b4d598c1")}}</a>
+  </aside>
+</section>
+
+<section class="metric-grid cti-compact-metrics" aria-label="{{_a("9d750fae748681ca")}}" data-i18n-aria-label="Résumé"><article><span>{{_i("a3829d82f8d0eb89")}}</span><strong>{{stats.total or 0}}</strong></article><article><span>{{_i("a8351e6bee6efac3")}}</span><strong>{{stats.completed or 0}}</strong></article><article><span>{{_i("0efb4d2a7252aff9")}}</span><strong>{{stats.reports or 0}}</strong></article><article><span>{{_i("31fdf222b738720f")}}</span><strong>{{stats.detections or 0}}</strong></article><article><span>{{_i("54e7d8bd905fb811")}}</span><strong>{{active_rules}}</strong></article></section>
+{% endblock %}

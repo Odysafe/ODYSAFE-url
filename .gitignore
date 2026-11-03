@@ -1,0 +1,28 @@
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+id_ed25519*
+.aws/
+*.sqlite
+*.sqlite3
+*.db
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+
+# Local evidence and backups
+data/scans/
+backups/
+*.tar.gz
+*.har
+
+# Local environment
+.DS_Store

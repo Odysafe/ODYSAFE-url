@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block title %}{{_a("122a2737c7f03e27")}}{% endblock %}
+{% block heading %}{{_i("a71f0e32e9de833b")}}{% endblock %}
+{% block content %}
+<section class="metric-grid system-components">
+  {% for label, version, explanation in components %}
+  <article class="system-component" tabindex="0" aria-describedby="component-help-{{loop.index}}">
+    <span>{{ui(label)}}</span><strong>{{version}}</strong>
+    <span class="system-component-help" id="component-help-{{loop.index}}" role="tooltip">{{ui(explanation)}}</span>
+  </article>
+  {% endfor %}
+</section>
+<section class="panel">
+  <div class="panel-head"><div><p class="eyebrow">{{_i("ab671005dca2d624")}}</p><h2>{{_i("614d525f2df99369")}}</h2></div></div>
+  <p class="muted">{{_i("f4a97084facecf75")}}</p>
+  <div class="table-wrap"><table><thead><tr><th>{{_i("494ab22e997c3777")}}</th><th>{{_i("de4dd03297a1a1b2")}}</th><th>{{_i("6605c1f1f739b555")}}</th></tr></thead><tbody>
+    <tr><td>{{_i("0def1351faf5fac7")}}</td><td><span class="badge completed">{{_i("f4e4f699637be88f")}}</span></td><td>{{_i("34b38c0346b7f7b0")}}</td></tr>
+    <tr><td>{{_i("f56d2c5c992b00cd")}}</td><td><span class="badge completed">{{_i("5d4171b75a0528ce")}}</span></td><td>{{_i("6fce6b2694cba160")}}</td></tr>
+    <tr><td>{{_i("503bfed1ad852090")}}</td><td><span class="badge completed">{{_i("d6f2e47d3aa2a268")}}</span></td><td>{{_i("893f76ed7024531b")}}</td></tr>
+    <tr><td>{{_i("ba132ac9b5cc8490")}}</td><td><span class="badge completed">{{_i("3f8635225ee80aa1")}}</span></td><td>{{_i("a6ef87b9073a367a")}}</td></tr>
+  </tbody></table></div>
+</section>
+<section class="panel danger-zone">
+  <div><p class="eyebrow">{{_i("aadd828130e5a2f0")}}</p><h2>{{_i("6b2e2f96e231a46c")}}</h2></div>
+  <p>{{ui('Cette opération supprime les investigations et leurs preuves, les sessions, les IOC personnalisés, les résultats DNS, les règles YARA-X et les dossiers personnalisés. Les bibliothèques YARA-X et IOC seront vides, avec un dossier Défaut chacune.')}}</p>
+  <p class="muted">{{_i("6a711d850f877016")}}</p>
+  <p class="notice danger-notice">{{_i("47c6e5c1fe50bfc2")}}</p>
+  <form method="post" action="/system/reset" class="reset-form" data-reset-odysafe><input type="hidden" name="csrf" value="{{csrf}}"><label>{{_i("39b63a01c64d5ad6")}} <code>EFFACER ODYSAFE</code><input name="confirm" autocomplete="off" required pattern="EFFACER ODYSAFE"></label><button class="danger">{{_i("a9e33477bfdeecda")}}</button></form>
+</section>
+{% endblock %}

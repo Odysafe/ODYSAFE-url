@@ -1,0 +1,14 @@
+<html><head><title></title></head><body><div id="written"></div><button id="clipboard" type="button">Copy</button><button id="popup" type="button">Popup</button><script>
+window.evalExecutionCount = 0;
+window.evalResult = eval(&quot;window.evalExecutionCount += 1; 6 * 7&quot;);
+try { eval(&quot;throw new Error(&#x27;ODYSAFE_EVAL_ERROR&#x27;)&quot;); }
+catch (error) { document.documentElement.dataset.evalError = error.message; }
+localStorage.setItem(&quot;odysafe-local&quot;, &quot;local-value&quot;);
+sessionStorage.setItem(&quot;odysafe-session&quot;, &quot;session-value&quot;);
+document.write(&quot;&lt;span id=&#x27;write-result&#x27;&gt;written once&lt;/span&gt;&quot;);
+document.writeln(&quot;&lt;span id=&#x27;writeln-result&#x27;&gt;written line&lt;/span&gt;&quot;);
+document.getElementById(&quot;clipboard&quot;).addEventListener(&quot;click&quot;, () =&gt;
+  navigator.clipboard.writeText(&quot;ODYSAFE_TEST_CLIPBOARD&quot;));
+document.getElementById(&quot;popup&quot;).addEventListener(&quot;click&quot;, () =&gt;
+  window.open(&quot;/target.html&quot;, &quot;_blank&quot;));
+</script><iframe src="/instrumented_frame.html"></iframe></body></html>

@@ -1,0 +1,1029 @@
+{
+  "name": "odysafe-distribution",
+  "services": {
+    "app": {
+      "restart": "unless-stopped",
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": 1,
+      "command": [
+        "python",
+        "-m",
+        "uvicorn",
+        "app.web.main:app",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8080",
+        "--no-access-log"
+      ],
+      "entrypoint": null,
+      "environment": {
+        "ODYSAFE_CONTROLLER_TOKEN": "${ODYSAFE_INSTALL_TOKEN:?Set ODYSAFE_INSTALL_TOKEN in your configuration file}",
+        "ODYSAFE_CONTROLLER_URL": "http://controller-gateway:8765",
+        "ODYSAFE_COOKIE_SECURE": "1",
+        "ODYSAFE_DB_PATH": "/database/odysafe.db",
+        "ODYSAFE_DNS_WORKER_TOKEN": "${ODYSAFE_INSTALL_TOKEN:?Set ODYSAFE_INSTALL_TOKEN in your configuration file}",
+        "ODYSAFE_DNS_WORKER_URL": "http://dns-enrichment:8053/v1/query",
+        "ODYSAFE_INTERNET_CONTROLLER_URL": "http://controller-gateway-internet:8765",
+        "ODYSAFE_PUBLIC_CAPTURE": "true",
+        "ODYSAFE_WEB_BIND": "127.0.0.1",
+        "ODYSAFE_WEB_ORIGINS": "https://127.0.0.1:${ODYSAFE_WEB_PORT:-8443},https://localhost:${ODYSAFE_WEB_PORT:-8443}",
+        "ODYSAFE_XPRA_INTERNET_URL": "https://127.0.0.1:${ODYSAFE_XPRA_INTERNET_PORT:-14501}",
+        "ODYSAFE_XPRA_URL": "https://127.0.0.1:${ODYSAFE_XPRA_PORT:-14500}"
+      },
+      "image": "odysafe-source-app:0.1.0",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "1073741824",
+      "networks": {
+        "dns-control": null,
+        "web-control": null
+      },
+      "pids_limit": 256,
+      "read_only": true,
+      "security_opt": [
+        "no-new-privileges:true",
+        "apparmor=docker-default"
+      ],
+      "stop_grace_period": "45s",
+      "tmpfs": [
+        "/tmp:rw,noexec,nosuid,nodev,size=256m",
+        "/home/odysafe:rw,nosuid,nodev,size=64m,uid=1000,gid=1000",
+        "/run:rw,nosuid,nodev,size=64m,uid=1000,gid=1000"
+      ],
+      "volumes": [
+        {
+          "type": "volume",
+          "source": "scans",
+          "target": "/data",
+          "volume": {}
+        },
+        {
+          "type": "volume",
+          "source": "database",
+          "target": "/database",
+          "volume": {}
+        }
+      ],
+      "healthcheck": {
+        "test": [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz', timeout=3).read()"
+        ],
+        "timeout": "5s",
+        "interval": "30s",
+        "retries": 3
+      },
+      "platform": "linux/amd64",
+      "pull_policy": "never",
+      "build": {
+        "context": ".",
+        "dockerfile": "docker/Dockerfile",
+        "target": "app",
+        "args": {
+          "ODYSAFE_UID": "1000",
+          "ODYSAFE_GID": "1000"
+        }
+      }
+    },
+    "capture-controller": {
+      "restart": "unless-stopped",
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": 2,
+      "command": null,
+      "entrypoint": [
+        "python",
+        "-m",
+        "app.orchestration.controller"
+      ],
+      "environment": {
+        "ODYSAFE_ALLOWED_ORIGINS": "http://fixture-server:8000",
+        "ODYSAFE_CONTROLLER_TOKEN": "${ODYSAFE_INSTALL_TOKEN:?Set ODYSAFE_INSTALL_TOKEN in your configuration file}",
+        "ODYSAFE_DATA_DIR": "/data",
+        "ODYSAFE_PUBLIC_CAPTURE": "true"
+      },
+      "image": "odysafe-source-interactive:0.1.0",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "2621440000",
+      "networks": {
+        "capture-control": null,
+        "capture-test": null
+      },
+      "pids_limit": 256,
+      "read_only": true,
+      "security_opt": [
+        "no-new-privileges:true",
+        "apparmor=docker-default"
+      ],
+      "shm_size": "536870912",
+      "stop_grace_period": "45s",
+      "tmpfs": [
+        "/tmp:rw,noexec,nosuid,nodev,size=256m",
+        "/home/odysafe:rw,nosuid,nodev,size=64m,uid=1000,gid=1000",
+        "/run:rw,nosuid,nodev,size=64m,uid=1000,gid=1000"
+      ],
+      "volumes": [
+        {
+          "type": "volume",
+          "source": "scans",
+          "target": "/data",
+          "volume": {}
+        }
+      ],
+      "depends_on": {
+        "fixture-server": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "platform": "linux/amd64",
+      "pull_policy": "never",
+      "build": {
+        "context": ".",
+        "dockerfile": "docker/Dockerfile",
+        "target": "interactive",
+        "args": {
+          "ODYSAFE_UID": "1000",
+          "ODYSAFE_GID": "1000"
+        }
+      }
+    },
+    "capture-controller-internet": {
+      "restart": "unless-stopped",
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": 2,
+      "command": null,
+      "entrypoint": [
+        "python",
+        "-m",
+        "app.orchestration.controller"
+      ],
+      "environment": {
+        "ODYSAFE_ALLOWED_ORIGINS": "http://fixture-server:8000",
+        "ODYSAFE_CONTROLLER_TOKEN": "${ODYSAFE_INSTALL_TOKEN:?Set ODYSAFE_INSTALL_TOKEN in your configuration file}",
+        "ODYSAFE_DATA_DIR": "/data",
+        "ODYSAFE_INTERNET_PROXY": "http://internet-proxy:3128",
+        "ODYSAFE_PUBLIC_CAPTURE": "true"
+      },
+      "image": "odysafe-source-interactive:0.1.0",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "2621440000",
+      "networks": {
+        "capture-control-internet": null,
+        "capture-internet": null
+      },
+      "pids_limit": 256,
+      "read_only": true,
+      "security_opt": [
+        "no-new-privileges:true",
+        "apparmor=docker-default"
+      ],
+      "shm_size": "536870912",
+      "stop_grace_period": "45s",
+      "tmpfs": [
+        "/tmp:rw,noexec,nosuid,nodev,size=256m",
+        "/home/odysafe:rw,nosuid,nodev,size=64m,uid=1000,gid=1000",
+        "/run:rw,nosuid,nodev,size=64m,uid=1000,gid=1000"
+      ],
+      "volumes": [
+        {
+          "type": "volume",
+          "source": "scans",
+          "target": "/data",
+          "volume": {}
+        }
+      ],
+      "depends_on": {
+        "internet-proxy": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "platform": "linux/amd64",
+      "pull_policy": "never",
+      "build": {
+        "context": ".",
+        "dockerfile": "docker/Dockerfile",
+        "target": "interactive",
+        "args": {
+          "ODYSAFE_UID": "1000",
+          "ODYSAFE_GID": "1000"
+        }
+      }
+    },
+    "certificate-init": {
+      "cap_add": [
+        "CHOWN"
+      ],
+      "cap_drop": [
+        "ALL"
+      ],
+      "command": [
+        "python",
+        "/srv/certificate.py"
+      ],
+      "entrypoint": null,
+      "environment": {
+        "ODYSAFE_GID": "1000",
+        "ODYSAFE_UID": "1000"
+      },
+      "image": "odysafe-source-gateway:0.1.0",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "network_mode": "none",
+      "read_only": true,
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "user": "0:1000",
+      "volumes": [
+        {
+          "type": "volume",
+          "source": "certificates",
+          "target": "/certificates",
+          "volume": {}
+        }
+      ],
+      "platform": "linux/amd64",
+      "pull_policy": "never",
+      "build": {
+        "context": ".",
+        "dockerfile": "docker/Dockerfile",
+        "target": "xpra-gateway",
+        "args": {
+          "ODYSAFE_UID": "1000",
+          "ODYSAFE_GID": "1000"
+        }
+      }
+    },
+    "certificate-maintenance": {
+      "restart": "unless-stopped",
+      "cap_add": [
+        "CHOWN"
+      ],
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": 0.1,
+      "command": [
+        "python",
+        "/srv/certificate.py",
+        "--watch"
+      ],
+      "entrypoint": null,
+      "environment": {
+        "ODYSAFE_GID": "1000",
+        "ODYSAFE_UID": "1000"
+      },
+      "image": "odysafe-source-gateway:0.1.0",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "67108864",
+      "network_mode": "none",
+      "pids_limit": 32,
+      "read_only": true,
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "user": "0:1000",
+      "volumes": [
+        {
+          "type": "volume",
+          "source": "certificates",
+          "target": "/certificates",
+          "volume": {}
+        }
+      ],
+      "depends_on": {
+        "certificate-init": {
+          "condition": "service_completed_successfully",
+          "required": true
+        }
+      },
+      "platform": "linux/amd64",
+      "pull_policy": "never",
+      "build": {
+        "context": ".",
+        "dockerfile": "docker/Dockerfile",
+        "target": "xpra-gateway",
+        "args": {
+          "ODYSAFE_UID": "1000",
+          "ODYSAFE_GID": "1000"
+        }
+      }
+    },
+    "controller-gateway": {
+      "restart": "unless-stopped",
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": 0.25,
+      "command": null,
+      "entrypoint": null,
+      "environment": {
+        "GATEWAY_LISTEN_PORT": "8765",
+        "GATEWAY_TARGET_HOST": "capture-controller",
+        "GATEWAY_TARGET_PORT": "8765"
+      },
+      "image": "odysafe-source-gateway:0.1.0",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "67108864",
+      "networks": {
+        "capture-control": null,
+        "web-control": null
+      },
+      "pids_limit": 32,
+      "read_only": true,
+      "security_opt": [
+        "no-new-privileges:true",
+        "apparmor=docker-default"
+      ],
+      "stop_grace_period": "45s",
+      "tmpfs": [
+        "/tmp:rw,noexec,nosuid,nodev,size=8m"
+      ],
+      "depends_on": {
+        "capture-controller": {
+          "condition": "service_started",
+          "required": true
+        }
+      },
+      "platform": "linux/amd64",
+      "pull_policy": "never",
+      "build": {
+        "context": ".",
+        "dockerfile": "docker/Dockerfile",
+        "target": "xpra-gateway",
+        "args": {
+          "ODYSAFE_UID": "1000",
+          "ODYSAFE_GID": "1000"
+        }
+      }
+    },
+    "controller-gateway-internet": {
+      "restart": "unless-stopped",
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": 0.25,
+      "command": null,
+      "entrypoint": null,
+      "environment": {
+        "GATEWAY_LISTEN_PORT": "8765",
+        "GATEWAY_TARGET_HOST": "capture-controller-internet",
+        "GATEWAY_TARGET_PORT": "8765"
+      },
+      "image": "odysafe-source-gateway:0.1.0",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "67108864",
+      "networks": {
+        "capture-control-internet": null,
+        "web-control": null
+      },
+      "pids_limit": 32,
+      "read_only": true,
+      "security_opt": [
+        "no-new-privileges:true",
+        "apparmor=docker-default"
+      ],
+      "stop_grace_period": "45s",
+      "tmpfs": [
+        "/tmp:rw,noexec,nosuid,nodev,size=8m"
+      ],
+      "depends_on": {
+        "capture-controller-internet": {
+          "condition": "service_started",
+          "required": true
+        }
+      },
+      "platform": "linux/amd64",
+      "pull_policy": "never",
+      "build": {
+        "context": ".",
+        "dockerfile": "docker/Dockerfile",
+        "target": "xpra-gateway",
+        "args": {
+          "ODYSAFE_UID": "1000",
+          "ODYSAFE_GID": "1000"
+        }
+      }
+    },
+    "database-backup": {
+      "restart": "unless-stopped",
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": 0.25,
+      "command": [
+        "python",
+        "-m",
+        "app.maintenance"
+      ],
+      "entrypoint": null,
+      "environment": {
+        "ODYSAFE_BACKUP_DIR": "/backups",
+        "ODYSAFE_DB_PATH": "/database/odysafe.db"
+      },
+      "image": "odysafe-source-app:0.1.0",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "134217728",
+      "network_mode": "none",
+      "pids_limit": 32,
+      "read_only": true,
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "tmpfs": [
+        "/tmp:rw,noexec,nosuid,nodev,size=16m"
+      ],
+      "volumes": [
+        {
+          "type": "volume",
+          "source": "database",
+          "target": "/database",
+          "volume": {}
+        },
+        {
+          "type": "volume",
+          "source": "backups",
+          "target": "/backups",
+          "volume": {}
+        }
+      ],
+      "depends_on": {
+        "app": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "healthcheck": {
+        "test": [
+          "CMD",
+          "python",
+          "-m",
+          "app.maintenance",
+          "--check"
+        ],
+        "timeout": "5s",
+        "interval": "1m0s",
+        "retries": 3,
+        "start_period": "2m0s"
+      },
+      "platform": "linux/amd64",
+      "pull_policy": "never",
+      "build": {
+        "context": ".",
+        "dockerfile": "docker/Dockerfile",
+        "target": "app",
+        "args": {
+          "ODYSAFE_UID": "1000",
+          "ODYSAFE_GID": "1000"
+        }
+      }
+    },
+    "dns-enrichment": {
+      "restart": "unless-stopped",
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": 0.5,
+      "command": [
+        "python",
+        "-m",
+        "app.dns.worker"
+      ],
+      "entrypoint": null,
+      "environment": {
+        "ODYSAFE_DNS_WORKER_PORT": "8053",
+        "ODYSAFE_DNS_WORKER_SERVE": "1",
+        "ODYSAFE_DNS_WORKER_TOKEN": "${ODYSAFE_INSTALL_TOKEN:?Set ODYSAFE_INSTALL_TOKEN in your configuration file}"
+      },
+      "image": "odysafe-source-app:0.1.0",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "268435456",
+      "networks": {
+        "dns-control": null,
+        "dns-egress": null
+      },
+      "pids_limit": 32,
+      "read_only": true,
+      "security_opt": [
+        "no-new-privileges:true",
+        "apparmor=docker-default"
+      ],
+      "stop_grace_period": "45s",
+      "tmpfs": [
+        "/tmp:rw,noexec,nosuid,nodev,size=32m,uid=1000,gid=1000"
+      ],
+      "user": "1000:1000",
+      "healthcheck": {
+        "test": [
+          "CMD",
+          "python",
+          "-c",
+          "import socket; socket.create_connection(('127.0.0.1',8053),2).close()"
+        ],
+        "timeout": "3s",
+        "interval": "10s",
+        "retries": 3
+      },
+      "platform": "linux/amd64",
+      "pull_policy": "never",
+      "build": {
+        "context": ".",
+        "dockerfile": "docker/Dockerfile",
+        "target": "app",
+        "args": {
+          "ODYSAFE_UID": "1000",
+          "ODYSAFE_GID": "1000"
+        }
+      }
+    },
+    "fixture-server": {
+      "restart": "unless-stopped",
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": 0.25,
+      "command": null,
+      "entrypoint": null,
+      "image": "odysafe-source-fixture:0.1.0",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "134217728",
+      "networks": {
+        "capture-test": null
+      },
+      "pids_limit": 64,
+      "read_only": true,
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "stop_grace_period": "45s",
+      "tmpfs": [
+        "/tmp:rw,noexec,nosuid,nodev,size=16m"
+      ],
+      "healthcheck": {
+        "test": [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=2).read()"
+        ],
+        "timeout": "2s",
+        "interval": "2s",
+        "retries": 10
+      },
+      "platform": "linux/amd64",
+      "pull_policy": "never",
+      "build": {
+        "context": ".",
+        "dockerfile": "docker/Dockerfile",
+        "target": "fixture",
+        "args": {
+          "ODYSAFE_UID": "1000",
+          "ODYSAFE_GID": "1000"
+        }
+      }
+    },
+    "internet-proxy": {
+      "restart": "unless-stopped",
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": 0.5,
+      "command": null,
+      "entrypoint": null,
+      "image": "odysafe-source-proxy:0.1.0",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "268435456",
+      "networks": {
+        "capture-internet": null,
+        "internet-egress": null
+      },
+      "pids_limit": 96,
+      "read_only": true,
+      "security_opt": [
+        "no-new-privileges:true",
+        "apparmor=docker-default"
+      ],
+      "stop_grace_period": "45s",
+      "tmpfs": [
+        "/tmp:rw,noexec,nosuid,nodev,size=32m",
+        "/run/squid:rw,noexec,nosuid,nodev,size=8m,uid=13,gid=13",
+        "/var/log/squid:rw,noexec,nosuid,nodev,size=16m,uid=13,gid=13",
+        "/var/spool/squid:rw,noexec,nosuid,nodev,size=16m,uid=13,gid=13"
+      ],
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "grep -Eq ':0C38[[:space:]].*[[:space:]]0A[[:space:]]' /proc/net/tcp /proc/net/tcp6"
+        ],
+        "timeout": "2s",
+        "interval": "2s",
+        "retries": 10,
+        "start_period": "2s"
+      },
+      "platform": "linux/amd64",
+      "pull_policy": "never",
+      "build": {
+        "context": ".",
+        "dockerfile": "docker/Dockerfile",
+        "target": "internet-proxy",
+        "args": {
+          "ODYSAFE_UID": "1000",
+          "ODYSAFE_GID": "1000"
+        }
+      }
+    },
+    "web-gateway": {
+      "restart": "unless-stopped",
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": 0.25,
+      "command": null,
+      "entrypoint": null,
+      "environment": {
+        "GATEWAY_LISTEN_PORT": "8080",
+        "GATEWAY_TARGET_HOST": "app",
+        "GATEWAY_TARGET_PORT": "8080",
+        "GATEWAY_TLS_CERTIFICATE": "/certificates/odysafe.crt",
+        "GATEWAY_TLS_ENABLED": "true",
+        "GATEWAY_TLS_PRIVATE_KEY": "/certificates/odysafe.key"
+      },
+      "image": "odysafe-source-gateway:0.1.0",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "67108864",
+      "networks": {
+        "web-control": null,
+        "web-publish": null
+      },
+      "pids_limit": 32,
+      "read_only": true,
+      "security_opt": [
+        "no-new-privileges:true",
+        "apparmor=docker-default"
+      ],
+      "stop_grace_period": "45s",
+      "tmpfs": [
+        "/tmp:rw,noexec,nosuid,nodev,size=8m"
+      ],
+      "volumes": [
+        {
+          "type": "volume",
+          "source": "certificates",
+          "target": "/certificates",
+          "read_only": true,
+          "volume": {}
+        }
+      ],
+      "depends_on": {
+        "app": {
+          "condition": "service_healthy",
+          "required": true
+        },
+        "certificate-init": {
+          "condition": "service_completed_successfully",
+          "required": true
+        }
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "host_ip": "127.0.0.1",
+          "target": 8080,
+          "published": "${ODYSAFE_WEB_PORT:-8443}",
+          "protocol": "tcp"
+        }
+      ],
+      "platform": "linux/amd64",
+      "pull_policy": "never",
+      "build": {
+        "context": ".",
+        "dockerfile": "docker/Dockerfile",
+        "target": "xpra-gateway",
+        "args": {
+          "ODYSAFE_UID": "1000",
+          "ODYSAFE_GID": "1000"
+        }
+      }
+    },
+    "xpra-gateway": {
+      "restart": "unless-stopped",
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": 0.25,
+      "command": null,
+      "entrypoint": null,
+      "environment": {
+        "GATEWAY_AUTH_HOST": "capture-controller",
+        "GATEWAY_AUTH_PORT": "8765",
+        "GATEWAY_CONSOLE_URL": "https://127.0.0.1:${ODYSAFE_WEB_PORT:-8443}/sessions",
+        "GATEWAY_LISTEN_PORT": "14500",
+        "GATEWAY_PUBLIC_PORT": "${ODYSAFE_XPRA_PORT:-14500}",
+        "GATEWAY_TARGET_HOST": "capture-controller",
+        "GATEWAY_TARGET_PORT": "14500",
+        "GATEWAY_TLS_CERTIFICATE": "/certificates/odysafe.crt",
+        "GATEWAY_TLS_ENABLED": "true",
+        "GATEWAY_TLS_PRIVATE_KEY": "/certificates/odysafe.key",
+        "GATEWAY_WEB_ORIGINS": "https://127.0.0.1:${ODYSAFE_WEB_PORT:-8443},https://localhost:${ODYSAFE_WEB_PORT:-8443}"
+      },
+      "image": "odysafe-source-gateway:0.1.0",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "67108864",
+      "networks": {
+        "capture-control": null,
+        "xpra-control": null
+      },
+      "pids_limit": 32,
+      "read_only": true,
+      "security_opt": [
+        "no-new-privileges:true",
+        "apparmor=docker-default"
+      ],
+      "stop_grace_period": "45s",
+      "tmpfs": [
+        "/tmp:rw,noexec,nosuid,nodev,size=8m"
+      ],
+      "volumes": [
+        {
+          "type": "volume",
+          "source": "certificates",
+          "target": "/certificates",
+          "read_only": true,
+          "volume": {}
+        }
+      ],
+      "depends_on": {
+        "capture-controller": {
+          "condition": "service_started",
+          "required": true
+        },
+        "certificate-init": {
+          "condition": "service_completed_successfully",
+          "required": true
+        }
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "host_ip": "127.0.0.1",
+          "target": 14500,
+          "published": "${ODYSAFE_XPRA_PORT:-14500}",
+          "protocol": "tcp"
+        }
+      ],
+      "platform": "linux/amd64",
+      "pull_policy": "never",
+      "build": {
+        "context": ".",
+        "dockerfile": "docker/Dockerfile",
+        "target": "xpra-gateway",
+        "args": {
+          "ODYSAFE_UID": "1000",
+          "ODYSAFE_GID": "1000"
+        }
+      }
+    },
+    "xpra-gateway-internet": {
+      "restart": "unless-stopped",
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": 0.25,
+      "command": null,
+      "entrypoint": null,
+      "environment": {
+        "GATEWAY_AUTH_HOST": "capture-controller-internet",
+        "GATEWAY_AUTH_PORT": "8765",
+        "GATEWAY_CONSOLE_URL": "https://127.0.0.1:${ODYSAFE_WEB_PORT:-8443}/sessions",
+        "GATEWAY_LISTEN_PORT": "14500",
+        "GATEWAY_PUBLIC_PORT": "${ODYSAFE_XPRA_INTERNET_PORT:-14501}",
+        "GATEWAY_TARGET_HOST": "capture-controller-internet",
+        "GATEWAY_TARGET_PORT": "14500",
+        "GATEWAY_TLS_CERTIFICATE": "/certificates/odysafe.crt",
+        "GATEWAY_TLS_ENABLED": "true",
+        "GATEWAY_TLS_PRIVATE_KEY": "/certificates/odysafe.key",
+        "GATEWAY_WEB_ORIGINS": "https://127.0.0.1:${ODYSAFE_WEB_PORT:-8443},https://localhost:${ODYSAFE_WEB_PORT:-8443}"
+      },
+      "image": "odysafe-source-gateway:0.1.0",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "67108864",
+      "networks": {
+        "capture-control-internet": null,
+        "xpra-control": null
+      },
+      "pids_limit": 32,
+      "read_only": true,
+      "security_opt": [
+        "no-new-privileges:true",
+        "apparmor=docker-default"
+      ],
+      "stop_grace_period": "45s",
+      "tmpfs": [
+        "/tmp:rw,noexec,nosuid,nodev,size=8m"
+      ],
+      "volumes": [
+        {
+          "type": "volume",
+          "source": "certificates",
+          "target": "/certificates",
+          "read_only": true,
+          "volume": {}
+        }
+      ],
+      "depends_on": {
+        "capture-controller-internet": {
+          "condition": "service_started",
+          "required": true
+        },
+        "certificate-init": {
+          "condition": "service_completed_successfully",
+          "required": true
+        }
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "host_ip": "127.0.0.1",
+          "target": 14500,
+          "published": "${ODYSAFE_XPRA_INTERNET_PORT:-14501}",
+          "protocol": "tcp"
+        }
+      ],
+      "platform": "linux/amd64",
+      "pull_policy": "never",
+      "build": {
+        "context": ".",
+        "dockerfile": "docker/Dockerfile",
+        "target": "xpra-gateway",
+        "args": {
+          "ODYSAFE_UID": "1000",
+          "ODYSAFE_GID": "1000"
+        }
+      }
+    }
+  },
+  "networks": {
+    "capture-control": {
+      "name": "odysafe-distribution-capture-control",
+      "driver": "bridge",
+      "ipam": {},
+      "internal": true
+    },
+    "capture-control-internet": {
+      "name": "odysafe-distribution-capture-control-internet",
+      "driver": "bridge",
+      "ipam": {},
+      "internal": true
+    },
+    "capture-internet": {
+      "name": "odysafe-distribution-capture-internet",
+      "driver": "bridge",
+      "ipam": {},
+      "internal": true
+    },
+    "capture-test": {
+      "name": "odysafe-distribution-capture-test",
+      "driver": "bridge",
+      "ipam": {},
+      "internal": true
+    },
+    "dns-control": {
+      "name": "odysafe-distribution-dns-control",
+      "driver": "bridge",
+      "ipam": {},
+      "internal": true
+    },
+    "dns-egress": {
+      "name": "odysafe-distribution-dns-egress",
+      "driver": "bridge",
+      "ipam": {}
+    },
+    "internet-egress": {
+      "name": "odysafe-distribution-internet-egress",
+      "driver": "bridge",
+      "ipam": {}
+    },
+    "web-control": {
+      "name": "odysafe-distribution-web-control",
+      "driver": "bridge",
+      "ipam": {},
+      "internal": true
+    },
+    "web-publish": {
+      "name": "odysafe-distribution-web-publish",
+      "driver": "bridge",
+      "ipam": {}
+    },
+    "xpra-control": {
+      "name": "odysafe-distribution-xpra-control",
+      "driver": "bridge",
+      "ipam": {}
+    }
+  },
+  "volumes": {
+    "backups": {
+      "name": "odysafe-distribution-backups"
+    },
+    "certificates": {
+      "name": "odysafe-distribution-certificates"
+    },
+    "database": {
+      "name": "odysafe-distribution-db"
+    },
+    "scans": {
+      "name": "odysafe-distribution-scans"
+    }
+  }
+}

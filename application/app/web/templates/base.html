@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="{{interface_language|default('fr')}}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Console locale d'investigation d'URL ODYSAFE">
+  <title>{% block title %}ODYSAFE-URL{% endblock %}</title>
+  <link rel="icon" type="image/png" href="/static/cti/logo-mini.png">
+  <link rel="stylesheet" href="/static/app.css">
+  <link rel="stylesheet" href="/static/cti-theme.css">
+  <script defer src="/static/i18n-catalog.js"></script>
+  <script defer src="/static/i18n.js"></script>
+  <script defer src="/static/htmx.min.js"></script>
+  <script defer src="/static/app.js"></script>
+  <script defer src="/static/library.js"></script>
+  <link rel="stylesheet" href="/static/library.css">
+  <script defer src="/static/relations.js"></script>
+</head>
+<body>
+  <a class="skip" href="#content">{{_i("4d1606f6a962dfc5")}}</a>
+  <div class="cti-background" aria-hidden="true"><img src="/static/cti/sphere-background.jpg" alt=""></div>
+  <nav class="cti-navbar" aria-label="{{_a("4ea15f9a0d372b3e")}}" data-i18n-aria-label="Navigation principale">
+    <div class="cti-nav-inner">
+      <a class="cti-brand" href="/" aria-label="{{_a("791a44b3db730ee6")}}" data-i18n-aria-label="ODYSAFE-URL — Nouvelle investigation">
+        <img src="/static/cti/logo-mini.png" alt="">
+        <span>ODYSAFE <b>URL</b></span>
+      </a>
+      <div class="cti-nav-links">
+        <a href="/" {% if active=='dashboard' %}aria-current="page"{% endif %}>{{_i("f35592749c067bb2")}}</a>
+        <a href="/scans" {% if active=='scans' %}aria-current="page"{% endif %}>Investigations</a>
+        <a href="/sessions" {% if active=='sessions' %}aria-current="page"{% endif %}>Sessions</a>
+        <details class="cti-nav-more" {% if active in ['engines','intelligence','rules','settings','system'] %}data-active="true"{% endif %}>
+          <summary>{{_i("242d9fdccee4d820")}}</summary>
+          <div class="cti-nav-menu">
+            <a href="/engines" {% if active in ['engines','intelligence','rules'] %}aria-current="page"{% endif %}><b>{{_i("195a6ccd54233bb1")}}</b><small>{{_i("a166d8ed84481504")}}</small></a>
+            <a href="/settings" {% if active=='settings' %}aria-current="page"{% endif %}><b>{{_i("01923df7a446c42f")}}</b><small>{{_i("46fdc2d6624a5420")}}</small></a>
+            <a href="/system" {% if active=='system' %}aria-current="page"{% endif %}><b>{{_i("1abaf88d08a505e4")}}</b><small>{{_i("ecd995226e1d3c38")}}</small></a>
+          </div>
+        </details>
+      </div>
+      <div class="language-switch" role="group" aria-label="Langue de l’interface" data-i18n-aria-label="Langue de l’interface">
+        <button type="button" data-language="fr" lang="fr" aria-pressed="{{'true' if interface_language=='fr' else 'false'}}">Français</button>
+        <button type="button" data-language="en" lang="en" aria-pressed="{{'true' if interface_language=='en' else 'false'}}">English</button>
+      </div>
+    </div>
+  </nav>
+  <main id="content" class="cti-main">
+    <header class="topbar"><div><p class="eyebrow">{{_i("c5ed6ab0725ab20d")}}</p><h1>{% block heading %}ODYSAFE-URL{% endblock %}</h1></div></header>
+    {% if error %}<div class="alert error" role="alert">{{ui(error)}}</div>{% endif %}
+    {% if message %}<div class="alert success" role="status">{{ui(message)}}</div>{% endif %}
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

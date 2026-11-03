@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block title %}{{_a("edf4b1df2d5b033f")}}{% endblock %}
+{% block heading %}{{_i("1df90aed1eff8d55")}}{% endblock %}
+{% block content %}
+<section class="panel analysis-confirm"><p class="eyebrow">{{'DNS' if engine=='dns' else 'YARA-X' if engine=='yara' else 'IOC'}} {{_i("022edbda39ec7acb")}}</p><h2>{{chosen|length}} {{_i("57daf85f60c2b5c1") if engine=='dns' else _i("ad67b2865b919537")}} · {{scan_ids|length}} investigation(s)</h2>
+<p>{{_i("608b8fecfa95594e") if engine=='dns' else _i("2b677a6eb13f588f")}}</p>
+<details open><summary>{{_i("4cb41326d226c39a") if engine=='dns' else _i("4635ff86746254e7")}}</summary><ul>{% for name in chosen %}<li>{{name}}</li>{% endfor %}</ul></details>
+<h3>Investigations</h3><ul>{% for id in scan_ids %}<li><a href="/scans/{{id}}">{{id}}</a>{% if engine=='dns' %} · {{domain_counts[loop.index0]}} {{_i("2fec65ab8587522e")}}{% endif %}</li>{% endfor %}</ul>
+{% if engine=='yara' %}<p class="notice">{{_i("f6b23e4b3411afbb")}}</p>{% endif %}
+<form method="post" action="/engines/{{engine}}/analyze"><input type="hidden" name="csrf" value="{{csrf}}"><input type="hidden" name="stage" value="run"><input type="hidden" name="include_inactive" value="{{include_inactive}}">{% for id in selected_ids %}<input type="hidden" name="selected" value="{{id}}">{% endfor %}{% for id in scan_ids %}<input type="hidden" name="scan_ids" value="{{id}}">{% endfor %}<div class="button-row"><a class="button" href="/engines/{{engine}}?view={{'checks' if engine=='dns' else 'analyze'}}">{{_i("786e90064896b5c0")}}</a><button class="primary">{{_i("5db0e827de04d50e") if engine=='dns' else _i("b81fecf07f1eceb9")}}</button></div></form>
+</section>
+{% endblock %}

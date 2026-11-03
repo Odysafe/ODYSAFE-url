@@ -1,0 +1,40 @@
+#!/bin/sh
+set -eu
+force_build=0
+build_only=0
+for option in "$@"; do
+    case "$option" in
+        --build) force_build=1;;
+        --build-only) force_build=1; build_only=1;;
+        --help|-h)
+            printf '%s\n' 'Usage: sh start.dh [--build] [--build-only]' \
+              'Build missing images from application/ and start the complete ODYSAFE application.' \
+              '--build       Rebuild images from the visible source files.' \
+              '--build-only  Build images without starting services (use before restoring data).'
+            exit 0;;
+        *) printf '%s\n' "Unknown option: $option. Run sh start.dh --help." >&2; exit 2;;
+    esac
+done
+cd -- "$(dirname -- "$0")/application"
+. ./common.sh
+require_docker
+require_supported_host
+initialize_local_configuration
+needs_build=$force_build
+for image in $(compose config --images | sort -u); do
+    docker image inspect "$image" >/dev/null 2>&1 || needs_build=1
+done
+if [ "$needs_build" -eq 1 ]; then
+    docker buildx version >/dev/null || { printf '%s\n' 'The Docker Buildx plugin is required to build images.' >&2; exit 1; }
+    printf '%s\n' 'Building the application from source. The first build downloads dependencies and may take several minutes.'
+    compose build
+fi
+if [ "$build_only" -eq 1 ]; then
+    printf '%s\n' 'Build complete. No services were started. You can now restore a backup.'
+    exit 0
+fi
+compose up -d --no-build --pull never --wait --wait-timeout 240
+printf '%s\n' "ODYSAFE is ready: https://$(compose port web-gateway 8080)"
+printf '%s\n' 'Data and settings are stored in Docker volumes on this computer.'
+printf '%s\n' "Local configuration: $local_config_file"
+printf '%s\n' 'The complete application is started. Use the web interface to choose your capture mode.'

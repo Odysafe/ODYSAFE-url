@@ -1,0 +1,11 @@
+images/
+*.tar
+*.tar.gz
+.git
+**/.git
+**/__pycache__
+**/.pytest_cache
+**/*.pyc
+*.env
+.env
+backups/
