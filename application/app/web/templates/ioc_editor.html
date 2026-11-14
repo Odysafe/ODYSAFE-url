@@ -1,0 +1,26 @@
+{% set editing = selected and selected.id %}
+{% set kind = selected.type if selected and selected.type in ioc_inputs else 'domain' %}
+{% set errors = field_errors|default({}) %}
+<article class="panel ioc-editor">
+  <p class="eyebrow">{{_i("b8b1c9d7c104e124") if editing else _i("68e13caa453c2a8e")}}</p><h2>{{_i("be213dd406cdaf2e") if editing else _i("883796955373741a")}}</h2>
+  <form method="post" action="/iocs/save" class="stack" data-ioc-editor>
+    <input type="hidden" name="csrf" value="{{csrf}}"><input type="hidden" name="ioc_id" value="{{selected.id if selected else ''}}">
+    <label for="ioc-kind">{{_i("9fd991b668cdfbb3")}}</label>
+    <select name="ioc_type" id="ioc-kind" data-ioc-kind>{% for type,guide in ioc_inputs.items() %}<option value="{{type}}" data-example="{{guide.example}}" data-help="{{guide.help}}" {% if kind==type %}selected{% endif %} data-i18n-data-example="{{guide.example}}" data-i18n-data-help="{{guide.help}}">{{ui(guide.label)}}</option>{% endfor %}</select>
+    {% if errors.ioc_type %}<p class="field-error" role="alert">{{ui(errors.ioc_type)}}</p>{% endif %}
+    <label for="ioc-value">{{_i("fa5c15224fcbe340")}}</label>
+    <input id="ioc-value" name="value" maxlength="4096" required value="{{selected.original_value if selected else ''}}" placeholder="{{ioc_inputs[kind].example}}" aria-describedby="ioc-value-help{% if errors.value %} ioc-value-error{% endif %}" {% if errors.value %}aria-invalid="true" autofocus{% endif %} data-ioc-value data-i18n-placeholder="{{ioc_inputs[kind].example}}">
+    <small id="ioc-value-help" data-ioc-help>{{ui(ioc_inputs[kind].help)}}</small>
+    {% if errors.value %}<p class="field-error" id="ioc-value-error" role="alert">{{ui(errors.value)}}</p>{% endif %}
+    <label>{{_i("2cdf175d11ce2df3")}}<select name="folder_id">{% for f in folders %}<option value="{{f.id}}" {% if (selected and selected.folder_id==f.id) or (not selected and (folder==f.id or (folder in ['all','none','archive'] and f.id==default_folder))) %}selected{% endif %}>{{folder_name(f)}}{{_i("77ade3b3cf96dcda") if f.is_default else ''}}</option>{% endfor %}</select></label>
+    <label>{{_i("35a94cf502e7aa15")}}<select name="category">{% for value,label in [('unknown','Non précisée'),('suspicious','Suspect'),('malware','Logiciel malveillant'),('phishing','Hameçonnage (phishing)'),('C2','Serveur de commande (C2)'),('unwanted','Contenu indésirable')] %}<option value="{{value}}" {% if selected and selected.category==value %}selected{% endif %}>{{ui(label)}}</option>{% endfor %}</select><small>{{_i("5a3079487014cb35")}}</small></label>
+    {% if errors.category %}<p class="field-error" role="alert">{{ui(errors.category)}}</p>{% endif %}
+    <label>{{_i("577ead9ce4ec29ff")}}<input name="source" maxlength="200" value="{{selected.declared_source if selected else ''}}" placeholder="{{_a("0d9046cc4327a51f")}}" data-i18n-placeholder="Ex. Rapport de mon équipe sécurité"><small>{{_i("b1ee525cf9fb3678")}}</small></label>
+    {% if errors.source %}<p class="field-error" role="alert">{{ui(errors.source)}}</p>{% endif %}
+    <label>{{_i("dd69b4d987968ab8")}}<textarea name="comment" maxlength="2000" placeholder="{{_a("5b42c19f8e0d20f7")}}" data-i18n-placeholder="Ex. Domaine reçu dans un courriel suspect le 2 novembre">{{selected.comment if selected else ''}}</textarea></label>
+    <label>{{_i("02e217b150009389")}}<input type="datetime-local" name="expires_at" value="{{selected.expires_at[:16] if selected and selected.expires_at else ''}}"><small>{{_i("11e6b97bcad9629f")}}</small></label>
+    {% if errors.expires_at %}<p class="field-error" role="alert">{{ui(errors.expires_at)}}</p>{% endif %}
+    <button class="primary">{{_i("45951f6ac18435ae") if editing else _i("312e2d030ba2bafa")}}</button>
+  </form>
+  {% if editing %}<div class="button-row"><form method="post" action="/iocs/{{selected.id}}/state/{{'disable' if selected.active else 'activate'}}"><input type="hidden" name="csrf" value="{{csrf}}"><button>{{_i("c07050ca89333056") if selected.active else _i("0efc2e864fe1820d")}}</button></form><form method="post" action="/iocs/{{selected.id}}/state/archive"><input type="hidden" name="csrf" value="{{csrf}}"><button>{{_i("8614cf0058703cc9")}}</button></form></div>{% endif %}
+</article>

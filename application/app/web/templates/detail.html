@@ -1,0 +1,656 @@
+{% extends 'base.html' %}{% block title %}Investigation · ODYSAFE-URL{% endblock %}{% block heading %}Investigation{% endblock %}{% block content %}
+{% macro ip_evidence(host) -%}
+  {% if host and host.connection_ips %}
+    {% set ips=host.connection_ips|unique|list %}
+    <ul class="ip-evidence-list">{% for ip in ips[:3] %}<li><code>{{ip}}</code></li>{% endfor %}</ul>
+    {% if ips|length > 3 %}<small>{{ips|length - 3}} {{_i("73fcecd27e523ad4")}}</small>{% endif %}
+    <small>{{_i("a3c4b7fb4b0757a1")}}</small>
+  {% elif host and host.resolved_ips %}
+    {% set ips=host.resolved_ips|map(attribute='ip')|unique|list %}
+    <ul class="ip-evidence-list">{% for ip in ips[:3] %}<li><code>{{ip}}</code></li>{% endfor %}</ul>
+    {% if ips|length > 3 %}<small>{{ips|length - 3}} {{_i("73fcecd27e523ad4")}}</small>{% endif %}
+    <small>{{_i("d264046829d758d5")}}</small>
+  {% else %}
+    {{_i("c1d77c8f044c805c")}} <small>{{_i("439c3b3da89e05cc")}}</small>
+  {% endif %}
+{%- endmacro %}
+<nav class="breadcrumbs">
+<a href="/scans">Scans</a>
+<span>/</span>
+<span class="mono">{{scan_id}}</span>
+</nav>
+<section class="case-head panel">
+<div class="case-head-main">
+<p class="eyebrow">SCAN {{scan_id}}</p>
+<h2 class="full-url">{{report.overview.submitted_url if report.overview else meta.submitted_url or _i("418c492d733cc827")}}</h2>
+<p class="full-url">{{report.overview.title if report.overview else meta.title or _i("97c6ae5192040995")}}</p>
+</div>
+<div class="case-head-state">
+<a class="button" href="/scans/{{scan_id}}/export.xlsx">{{ui('Exporter le rapport (.xlsx)')}}</a>
+<span class="badge {{report.analysis_status}}">{{_i("d8673f986239d37b")}} {{ui(report.analysis_status or 'absente')}}</span>
+<small>{{_i("43871ab9d401089a")}}</small>
+</div>
+</section>
+{% if not report.report_available %}<div class="notice">{{_i("ba05e58a99803580")}}</div>{% endif %}
+<section class="analysis-strip" aria-label="{{_a("49905cb30b66f0ce")}}" data-i18n-aria-label="État réel des analyses">{% for key,label in [('capture','Capture'),('file_analysis','Fichiers'),('yara_x','YARA-X'),('ioc','IOC'),('dns','Réputation DNS')] %}<div>
+<span>{{ui(label)}}</span>
+<b class="badge {{analysis_states[key]}}">{{ui(analysis_states[key]|replace('_',' '))}}</b>
+</div>{% endfor %}</section>
+<nav class="tabs" aria-label="{{_a("8948432d2c71f2e0")}}" data-i18n-aria-label="Sections du rapport">{% for key,label in [('overview','Résumé'),('hosts','Hôtes'),('network','Réseau'),('navigation','Relations'),('behavior','Comportements'),('detections','Détections'),('artifacts','Fichiers'),('indicators','Indicateurs'),('threat_intelligence','Threat Intelligence')] %}<a href="?section={{key}}" {% if section==key %}aria-current="page"{% endif %}>{{ui(label)}}</a>{% endfor %}</nav>
+{% if section=='overview' %}
+<section class="panel case-summary overview-identity">
+<div>
+<p class="eyebrow">INVESTIGATION</p>
+<h2>{{report.overview.title or _i("ce97f224da5509cf")}}</h2>
+<dl class="url-evidence">
+<dt>{{_i("3e4579e83fbfcc88")}}</dt>
+<dd>
+<code title="{{report.overview.submitted_url}}" data-i18n-title="{{report.overview.submitted_url}}">{{report.overview.submitted_url or _i("0f00e2fc90538a21")}}</code>
+</dd>
+<dt>{{_i("2b34687ad8713966")}}</dt>
+<dd>
+<code title="{{report.overview.final_url}}" data-i18n-title="{{report.overview.final_url}}">{{report.overview.final_url or _i("0f00e2fc90538a21")}}</code>
+</dd>
+<dt>{{_i("a3ae9226707cbca2")}}</dt>
+<dd>{{ip_evidence(presentation.submitted_host)}}</dd>
+<dt>{{_i("c90fc208ae19b3c2")}}</dt>
+<dd>{{ip_evidence(presentation.final_host)}}</dd>
+</dl>
+</div>
+<span class="badge {{report.overview.capture_status}}">{{ui(report.overview.capture_status)}}</span>
+</section>
+<section class="metric-grid report-metrics">
+<article>
+<span>{{_i("2aa888e2743fb910")}}</span>
+<strong>{{report.network.total_requests if report.network else '—'}}</strong>
+</article>
+<article>
+<span>{{_i("ac1d0cbf9a633fc6")}}</span>
+<strong>{{presentation.hosts|length}}</strong>
+</article>
+<article>
+<span>Scripts</span>
+<strong>{{report.javascript|length}}</strong>
+</article>
+<article>
+<span>{{_i("9581d056ec2b1776")}}</span>
+<strong>{{report.downloaded_files|length}}</strong>
+</article>
+<article>
+<span>{{_i("4a036ef4883ce800")}}</span>
+<strong>{{presentation.security_signals|length}}</strong>
+</article>
+<article>
+<span>{{_i("45009d7b8a64cdb6")}}</span>
+<strong>{{artifacts|length}}</strong>
+</article>
+</section>
+{% if presentation.security_signals %}<section class="panel security-signals">
+<div class="panel-head">
+<div>
+<p class="eyebrow">{{_i("b0e64f6a3b30257a")}}</p>
+<h2>{{_i("55ad92f0ef856f8e")}}</h2>
+</div>
+<a href="?section=threat_intelligence">{{_i("2aec0a46fcc5d56a")}}</a>
+</div>
+<div class="signal-grid">{% for signal in presentation.security_signals %}<article>
+<span class="badge blocked">{{_i("e5606d8ded576e47")}} {{signal.provider}}</span>
+<h3>{{signal.domain}}</h3>
+<p>
+<b>{{signal.rcodes|join(', ')}}</b> · {{signal.qtypes|join(' + ')}}{% if signal.ede %} · EDE {% for item in signal.ede %}{{item.code}}{{' — '~item.text if item.text and item.text != 'None'}}{{', ' if not loop.last}}{% endfor %}{% endif %}</p>
+<small>{{signal.checked_at}} · {{signal.request_count}} {{_i("1e77a6b8d9a03f5e")}}</small>
+<a href="?section=network&q={{signal.domain|urlencode}}">{{_i("a1236e3a657ff5c5")}}</a>
+</article>{% endfor %}</div>
+<p class="muted">{{_i("573c0774266fa12f")}}</p>
+</section>{% endif %}
+<section class="two-cols">
+<article class="panel">
+<div class="panel-head">
+<h2>{{_i("796ab96d098db095")}}</h2>
+<span class="badge {{report.analysis_status}}">{{_i("d8673f986239d37b")}} {{ui(report.analysis_status)}}</span>
+</div>
+<dl class="details">
+<dt>Capture</dt>
+<dd>{{ui(analysis_states.capture|replace('_',' '))}}</dd>
+<dt>Chromium</dt>
+<dd>{{_i("1ca225726bb40983")}}</dd>
+<dt>YARA-X</dt>
+<dd>{{ui(analysis_states.yara_x|replace('_',' '))}} · {{presentation.yara_rules_tested}} {{_i("25522c1d93884c05")}} {{presentation.yara_artifacts_tested}} {{_i("4c43777df837a1ff")}}</dd>
+<dt>IOC</dt>
+<dd>{{ui(analysis_states.ioc|replace('_',' '))}} · {{presentation.ioc_passes}} {{_i("e86967847b6ae1e2")}} {{presentation.ioc_matches}} {{_i("d7497657b23c200b")}}</dd>
+<dt>DNS</dt>
+<dd>{{ui(analysis_states.dns|replace('_',' '))}} {{_i("e0e085eb54dbaab6")}} {{presentation.dns_providers}} {{_i("4b184ea2b78a2147")}} {{presentation.dns_provider_total}}</dd>
+<dt>{{_i("71d0bad42af1144f")}}</dt>
+<dd>{{report.overview.duration_ms or _i("0f00e2fc90538a21")}}{% if report.overview.duration_ms %} ms{% endif %}</dd>
+<dt>{{_i("f549d69c49edeaa3")}}</dt>
+<dd>{{report.generated_at or _i("0f00e2fc90538a21")}}</dd>
+</dl>
+</article>
+<article class="panel screenshot-card">
+<div class="panel-head">
+<div>
+<h2>{{_i("b441c882b4f5c6b5")}}</h2>
+<small>{{_i("599be6a1aa35c0e9")}}</small>
+</div>{% if 'screenshot.png' in artifacts|map(attribute='name') %}<a href="/scans/{{scan_id}}/artifact/screenshot.png?inline=true">{{_i("0666140bb96e3f91")}}</a>{% endif %}</div>{% if 'screenshot.png' in artifacts|map(attribute='name') %}<a class="screenshot-preview" href="/scans/{{scan_id}}/artifact/screenshot.png?inline=true">
+<img src="/scans/{{scan_id}}/artifact/screenshot.png?inline=true" alt="{{_a("b0433b10d560768c")}}" loading="lazy" data-i18n-alt="Aperçu du haut de la capture, ouvrir pour voir la page complète">
+</a>{% else %}<div class="empty">{{_i("2c00f40f39396f41")}}</div>{% endif %}</article>
+</section>
+<section class="panel">
+<div class="panel-head">
+<h2>{{_i("c63e9c112f6e3154")}}</h2>
+<a href="?section=hosts">{{_i("c24d3d3dd6abddff")}} {{presentation.hosts|length}} {{_i("275684fd7c4a5b7d")}}</a>
+</div>
+<div class="table-wrap">
+<table class="compact-table">
+<thead>
+<tr>
+<th>{{_i("abb7b3a27c643215")}}</th>
+<th>{{_i("2aa888e2743fb910")}}</th>
+<th>{{_i("4283faf13b0daa56")}}</th>
+<th>DNS / IOC</th>
+<th>{{_i("45009d7b8a64cdb6")}}</th>
+</tr>
+</thead>
+<tbody>{% for host in presentation.hosts[:8] %}<tr>
+<td>
+<code>{{host.hostname}}</code>
+</td>
+<td>{{host.requests}}</td>
+<td>{{ip_evidence(host)}}</td>
+<td>{% if host.blocked_providers %}<span class="badge blocked">{{host.blocked_providers}} {{_i("054917eebc58e723")}}</span>{% else %}<span class="muted">{{_i("fd18c1606107197d")}}</span>{% endif %}</td>
+<td>
+<a href="?section=network&q={{host.hostname|urlencode}}">{{_i("2aa888e2743fb910")}}</a>
+</td>
+</tr>{% endfor %}</tbody>
+</table>
+</div>
+</section>
+{% elif section=='hosts' %}<section class="panel">
+<div class="panel-head">
+<div>
+<p class="eyebrow">{{_i("b0b6ba295033299c")}}</p>
+<h2>{{presentation.hosts|length}} {{_i("e91197a2cf3aec4f")}}</h2>
+</div>
+<a href="?section=navigation">{{_i("e69d1ca8f7e8871a")}}</a>
+</div>
+<p class="notice">{{_i("5d7c0d97c4fbc80c")}}</p>
+<div class="table-wrap">
+<table class="compact-table hosts-table">
+<thead>
+<tr>
+<th>{{_i("9b0107ee09d45b66")}}</th>
+<th>{{_i("2aa888e2743fb910")}}</th>
+<th>{{_i("4cbdbad10e6fff0e")}}</th>
+<th>{{_i("571821d27afd87d1")}}</th>
+<th>{{_i("6d7c54e6c41b7c88")}}</th>
+<th>{{_i("a0c2745d6838082a")}}</th>
+</tr>
+</thead>
+<tbody>{% for host in presentation.hosts %}<tr class="{{'host-signal' if host.blocked_providers else ''}}">
+<td>
+<code title="{{host.hostname}}" data-i18n-title="{{host.hostname}}">{{host.hostname}}</code>
+<a href="?section=network&q={{host.hostname|urlencode}}">{{_i("a10bf2295441929b")}}</a>
+</td>
+<td>{{host.requests}}</td>
+<td>{{ip_evidence(host)}}</td>
+<td>{{host.sent}} / {{host.received}}</td>
+<td>{{host.first or _i("0f00e2fc90538a21")}}<small>{{host.last or _i("0f00e2fc90538a21")}}</small>
+</td>
+<td>{% if host.blocked_providers %}<span class="badge blocked">{{_i("3d0f136b45082ccd")}} {{host.blocked_providers}} {{_i("57daf85f60c2b5c1")}}</span>{% else %}{{_i("edf72e4226277052")}}{% endif %}</td>
+</tr>{% else %}<tr>
+<td colspan="6">{{_i("e56b4e15e6234b65")}}</td>
+</tr>{% endfor %}</tbody>
+</table>
+</div>
+</section>
+{% elif section=='network' %}<section class="panel network-shell">
+<div class="panel-head">
+<div>
+<p class="eyebrow">{{_i("ce86000d39549d63")}}</p>
+<h2>{{network_total}} {{_i("5d791283a63ddee3")}}</h2>
+<p>{{_i("4ce16b2ff86c5fd9")}}</p>
+</div>
+<a class="button compact-action" href="/scans/{{scan_id}}/artifact/network.har">{{_i("e32944f1aab926af")}}</a>
+</div>
+<form class="filters network-filters" method="get">
+<input type="hidden" name="section" value="network">
+<label>{{_i("e5b5e45b5546c96f")}}<input type="search" name="q" value="{{q}}" maxlength="200" placeholder="{{_a("e2303b7d71f319dd")}}" data-i18n-placeholder="Domaine, chemin, type…">
+</label>
+<button>{{_i("733d1c742675f537")}}</button>
+</form>
+<div class="network-list" role="list">{% for item in network_page %}<article class="network-row" id="request-{{item.id}}" role="listitem">
+<div class="network-index">
+<b>{{loop.index + (page_number-1)*50}}</b>
+<time>{{(item.started_at or '—').split('T')[-1]}}</time>
+</div>
+<div class="network-request">
+<div class="network-request-head">
+<span class="method method-{{item.method|lower}}">{{item.method or '—'}}</span>
+<b>{{item.hostname or _i("416b5f026c329886")}}</b>
+<span class="http-status status-{{(item.status|string)[:1]}}xx">{{item.status if item.status is defined else '—'}}</span>
+</div>
+<code class="network-path" title="{{item.url}}" data-i18n-title="{{item.url}}">{{item.url}}</code>{% if item.initiator %}<small title="{{item.initiator}}" data-i18n-title="{{item.initiator}}">{{_i("c002e3754bec56aa")}} <code>{{item.initiator}}</code>
+</small>{% endif %}</div>
+<div class="network-kind">
+<span class="resource-chip">{% if 'javascript' in (item.mime_type or '') %}<img src="/static/lookyloo/javascript.png" alt="">{% elif 'css' in (item.mime_type or '') %}<img src="/static/lookyloo/css.png" alt="">{% elif 'html' in (item.mime_type or '') %}<img src="/static/lookyloo/html.png" alt="">{% elif (item.mime_type or '').startswith('image/') %}<img src="/static/lookyloo/image.png" alt="">{% elif 'json' in (item.mime_type or '') %}<img src="/static/lookyloo/json.png" alt="">{% endif %}{{item.mime_type or _i("226106212cd08c34")}}</span>
+<small>{{item.duration_ms if item.duration_ms is not none else '—'}} ms · {{item.response_body_size if item.response_body_size is not none else '—'}} {{_i("65c74c15a686187b")}}</small>
+</div>
+<div class="network-ip">{% if item.remote_server_ip %}<b>{{item.remote_server_ip}}</b>
+<small>{{_i("64f9d9e7614dd764")}}</small>{% else %}<span class="muted">{{_i("acb1129fd7d47e21")}}</span>{% endif %}</div>
+<div class="network-action">
+<button type="button" class="copy compact-action" data-copy="{{item.url}}">{{_i("84b03702780e4858")}}</button>
+<details>
+<summary>{{_i("17eaee489b095c37")}}</summary>
+<dl class="request-details">
+<dt>{{_i("98ce89390dd0b649")}}</dt>
+<dd>
+<code>{{item.url}}</code>
+</dd>
+<dt>ID</dt>
+<dd>{{item.id}}</dd>
+<dt>{{_i("9ff92c31b520c38f")}}</dt>
+<dd>{{item.started_at or _i("0f00e2fc90538a21")}}</dd>
+<dt>{{_i("5304728fdca0882a")}}</dt>
+<dd>{{item.initiator or _i("364cadb07b3894aa")}}</dd>
+<dt>{{_i("4283faf13b0daa56")}}</dt>
+<dd>{{item.remote_server_ip or _i("0f00e2fc90538a21")}}{% if item.remote_server_ip %}<small>{{_i("8e6f80eb088d354e")}}</small>{% endif %}</dd>
+<dt>{{_i("a68ed7e8a026eb3b")}}</dt>
+<dd>{{item.redirect_url or _i("290106c8a56a482a")}}</dd>
+<dt>{{_i("e6c1878dc16ec621")}}</dt>
+<dd>{{item.response_content_size if item.response_content_size is not none else _i("0f00e2fc90538a21")}}</dd>
+</dl>
+</details>
+</div>
+</article>{% else %}<div class="empty">{{_i("afbcc387d15a82b7")}}</div>{% endfor %}</div>
+</section>
+{% elif section=='navigation' %}{% include 'relations.html' %}
+{% elif section=='behavior' %}<section class="panel">
+<div class="panel-head">
+<h2>{{_i("184608207c25a241")}}</h2>
+<span>{{report.browser_events.total if report.browser_events else _i("0f00e2fc90538a21")}}</span>
+</div>
+<div class="event-list">{% for event in report.browser_events.events %}<article>
+<header>
+<span class="badge">{{event.type}}</span>
+<time>{{event.timestamp or _i("659a8e8416f7a699")}}</time>
+</header>
+<p class="mono">{{event.url or _i("98fc4bef168620d6")}}</p>
+<pre>{{event.details|tojson(indent=2)}}</pre>
+</article>{% else %}<div class="empty">{{_i("ee2b23aebff9c98c")}}</div>{% endfor %}</div>
+</section>
+{% elif section=='detections' %}{% include 'detections_summary.html' %}{% if false %}{% if presentation.security_signals %}<section class="panel security-signals">
+<div class="panel-head">
+<div>
+<p class="eyebrow">{{_i("b0e64f6a3b30257a")}}</p>
+<h2>{{_i("d8881f80d8df9d9b")}}</h2>
+</div>
+<a href="?section=threat_intelligence">{{_i("b6a803801d12ba2b")}}</a>
+</div>
+<div class="signal-grid">{% for signal in presentation.security_signals %}<article>
+<span class="badge blocked">{{_i("e5606d8ded576e47")}} {{signal.provider}}</span>
+<h3>{{signal.domain}}</h3>
+<p>{{signal.rcodes|join(', ')}} · {{signal.qtypes|join(' + ')}}{% if signal.ede %} · EDE {% for item in signal.ede %}{{item.code}}{{', ' if not loop.last}}{% endfor %}{% endif %}</p>
+<small>{{signal.checked_at}} · {{signal.request_count}} {{_i("dcc6d22026ccd9b9")}}</small>
+<a href="?section=network&q={{signal.domain|urlencode}}">{{_i("27bfb7f00838d0d4")}}</a>
+</article>{% endfor %}</div>
+</section>{% endif %}<section class="panel domain-coverage">
+<div class="panel-head">
+<div>
+<p class="eyebrow">{{_i("c0e206e4c72ec620")}}</p>
+<h2>{{_i("2453c7b0500779b4")}}</h2>
+</div>
+</div>
+<p class="notice">{{_i("281cc8a8273a4c91")}}</p>
+<div class="table-wrap">
+<table class="compact-table domain-coverage-table">
+<thead>
+<tr>
+<th>{{_i("9b0107ee09d45b66")}}</th>
+<th>YARA-X</th>
+<th>IOC</th>
+<th>DNS Security</th>
+</tr>
+</thead>
+<tbody>{% for item in presentation.domain_analysis_coverage %}<tr>
+<td>
+<code title="{{item.domain}}" data-i18n-title="{{item.domain}}">{{item.domain}}</code>
+<a href="?section=network&q={{item.domain|urlencode}}">{{_i("db9f0635def18cb3")}}</a>
+</td>
+<td>
+<span class="badge {{item.yara.status}}">{{ui(item.yara.label)}}</span>
+<small>{{item.yara.rules}} {{_i("c6a43c5b6dae630f")}}</small>
+<small>{{item.yara.succeeded}} / {{item.yara.attempted}} {{_i("bf5abb5f31793a44")}}{% if item.yara.failed %} · {{item.yara.failed}} {{_i("51a7c9cfd5a547f9")}}{% endif %}</small>
+<small>{{item.yara.matches}} {{_i("d7497657b23c200b")}}</small>
+</td>
+<td>
+<span class="badge {{item.ioc.status}}">{{ui(item.ioc.label)}}</span>
+<small>{{item.ioc.runs}} {{_i("09941ff11c877f3d")}}</small>
+<small>{{item.ioc.matches}} {{_i("d7497657b23c200b")}}</small>
+</td>
+<td>
+<span class="badge {{item.dns.status}}">{{ui(item.dns.label)}}</span>
+<small>{{item.dns.queries}} {{_i("178ef9ea22a30d00")}} {{item.dns.providers}} {{_i("57daf85f60c2b5c1")}}</small>
+<small>{{item.dns.succeeded}} {{_i("3a0e96cb7147a0ff")}}{% if item.dns.failed %} · {{item.dns.failed}} {{_i("51a7c9cfd5a547f9")}}{% endif %}</small>
+<small>{{item.dns.signals}} {{_i("054917eebc58e723")}}</small>
+</td>
+</tr>{% else %}<tr>
+<td colspan="4">{{_i("fdafc32f67db8427")}}</td>
+</tr>{% endfor %}</tbody>
+</table>
+</div>
+</section>
+<section class="panel">
+<div class="panel-head">
+<h2>{{_i("5a16afe793825ecd")}}</h2>
+<form method="post" action="/scans/{{scan_id}}/reanalyze">
+<input type="hidden" name="csrf" value="{{csrf}}">
+<button>{{_i("d4a8efdb3fb2a5e2")}}</button>
+</form>
+</div>
+<div class="engine-grid">{% for name,engine in report.detection_engines.items() %}<article>
+<b>{{name}}</b>
+<span class="badge {{engine.status}}">{{ui(engine.status)}}</span>{% if engine.rule_set %}<small>{{_i("01f23a67656caf62")}} <code>{{engine.rule_set.sha256[:12]}}</code> · {{engine.rule_set.active_rules or (engine.rule_set.custom_rules or 0)}} {{_i("c6a43c5b6dae630f")}}</small>{% endif %}{% if engine.execution %}<small>{{engine.execution.artifacts_scanned}} {{_i("f6b52ccb537d043c")}} {{engine.execution.matches}} {{_i("7462e7f7aeeff923")}} {{engine.execution.files_skipped}} {{_i("a8bea00dfb86dd6f")}}</small>{% endif %}{% for error in engine.errors %}<small class="error-text">{{ui(error)}}</small>{% endfor %}</article>{% endfor %}</div>{% set yara=report.detection_engines.get("yara_x", {}) %}{% if yara.execution and yara.execution.domain_coverage %}<details>
+<summary>{{_i("ec42bf0734f8fa3a")}}</summary>
+<div class="table-wrap">
+<table class="compact-table">
+<thead>
+<tr>
+<th>{{_i("1b0fa42abe8b2e42")}}</th>
+<th>{{_i("fcb8b59b7483fcda")}}</th>
+<th>{{_i("de4dd03297a1a1b2")}}</th>
+<th>{{_i("fac37e39e02c8074")}}</th>
+</tr>
+</thead>
+<tbody>{% for item in yara.execution.artifacts %}<tr>
+<td class="mono">{{item.artifact}}</td>
+<td>{{item.domain or _i("51d3aaf58c264fd6")}}</td>
+<td>{{ui(item.status)}}</td>
+<td>{{item.matches}}</td>
+</tr>{% endfor %}</tbody>
+</table>
+</div>
+</details>{% elif yara.status=="completed" %}<div class="notice">{{_i("e62d7ab5e81da716")}}</div>{% endif %}{% for finding in report.detections %}<article class="finding">
+<header>
+<span class="badge severity-{{finding.severity}}">{{ui(finding.severity)}}</span>
+<b>{{finding.rule_id}}</b>
+<span>{{finding.engine}}</span>
+</header>
+<p>{{finding.description}}</p>
+<pre>{{finding.evidence|tojson(indent=2)}}</pre>
+</article>{% else %}<div class="empty">{{_i("fcb08b020f53f4d5")}}</div>{% endfor %}</section>{% endif %}
+{% elif section=='artifacts' %}<section class="panel">
+<div class="panel-head">
+<h2>{{_i("100b9f0f58780058")}}</h2>{% if report.downloaded_files|selectattr('status','equalto','collected')|list %}<form method="post" action="/scans/{{scan_id}}/downloads.zip">
+<input type="hidden" name="csrf" value="{{csrf}}">
+<button>{{_i("bb0303b6a60125d1")}}</button>
+</form>{% endif %}</div>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>{{_i("ad2149686dc5126b")}}</th>
+<th>{{_i("3bdf9af17f473751")}}</th>
+<th>{{_i("77093e0c33ff0d37")}}</th>
+<th>SHA-256</th>
+<th>{{_i("de4dd03297a1a1b2")}}</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>{% for item in report.downloaded_files %}<tr>
+<td>{{item.original_name or item.stored_name or _i("3b986a55bf84917c")}}</td>
+<td>
+<code>{{item.source_url or _i("2a0b74c674d89477")}}</code>
+</td>
+<td>{{item.size if item.size is not none else '—'}}</td>
+<td>
+<code>{{item.sha256 or '—'}}</code>
+</td>
+<td>
+<span class="badge {{item.status}}">{{ui(item.status)}}</span>
+</td>
+<td>{% if item.status=='collected' %}<form method="post" action="/scans/{{scan_id}}/downloads.zip">
+<input type="hidden" name="csrf" value="{{csrf}}">
+<input type="hidden" name="artifact" value="{{item.path}}">
+<button>{{_i("7cf506b8bad3ad61")}}</button>
+</form>{% else %}{{_i("a17983cfd53eccc5")}}{% endif %}</td>
+</tr>{% else %}<tr>
+<td colspan="6">{{_i("580c017e9f12e1bb")}}</td>
+</tr>{% endfor %}</tbody>
+</table>
+</div>
+<h2>{{_i("5877273d478c4c4b")}}</h2>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>URL</th>
+<th>MIME</th>
+<th>{{_i("77093e0c33ff0d37")}}</th>
+<th>SHA-256</th>
+<th>{{_i("de4dd03297a1a1b2")}}</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>{% for item in report.javascript %}<tr>
+<td>
+<code>{{item.url}}</code>
+</td>
+<td>{{item.mime_type or '—'}}</td>
+<td>{{item.size or '—'}}</td>
+<td>
+<code>{{item.sha256 or '—'}}</code>
+</td>
+<td>
+<span class="badge {{item.status}}">{{ui(item.status)}}</span>
+</td>
+<td>{% if item.path %}<a href="/scans/{{scan_id}}/view/{{item.path}}">{{_i("29ed12c0b7a75bc9")}}</a>{% else %}{{_i("464c0dbc6efd0f65")}}{% endif %}</td>
+</tr>{% else %}<tr>
+<td colspan="6">{{_i("46afeb1e71803cf1")}}</td>
+</tr>{% endfor %}</tbody>
+</table>
+</div>
+<h2>{{_i("5d9f38d8e539db49")}}</h2>
+<div class="artifact-grid">{% for item in artifacts %}<article>
+<b>{{folder_name(item)}}</b>
+<span>{{item.size}} {{_i("eca54ebd28da6204")}}</span>{% if item.name in ['network.har','dom.html','cookies.json','console.json','browser_events.json','meta.json','report.json'] %}<a href="/scans/{{scan_id}}/view/{{item.name}}">{{_i("68e7b0f6bcf3e866")}}</a>{% endif %}<a href="/scans/{{scan_id}}/artifact/{{item.name}}">{{_i("a708898699b7721e")}}</a>
+</article>{% endfor %}</div>{% if dom_text %}<h3>{{_i("dc2e06fd51307566")}}</h3>
+<pre class="code-view">{{dom_text}}</pre>{% endif %}</section>
+{% elif section=='indicators' %}<section class="panel">
+<div class="panel-head">
+<div>
+<p class="eyebrow">{{_i("ef0c8a96999324b4")}}</p>
+<h2>{{_i("212d2f8ab11248ee")}}</h2>
+</div>
+<span class="muted">{{_i("47802194604ce862")}}</span>
+</div>
+<div class="table-wrap">
+<table class="compact-table indicator-table">
+<thead>
+<tr>
+<th>{{_i("38976e4d05dbc07e")}}</th>
+<th>Type</th>
+<th>Observation</th>
+<th>{{_i("84b03702780e4858")}}</th>
+<th>Pivot</th>
+</tr>
+</thead>
+<tbody>{% for key in ['urls','domains','ips','hashes'] %}{% for value in report.indicators[key] %}<tr>
+<td>
+<code class="cell-ellipsis" title="{{value}}" data-i18n-title="{{value}}">{{value}}</code>
+</td>
+<td>{{key[:-1]|upper if key.endswith('s') else key|upper}}</td>
+<td>{{_i("794cc9b8d6ecba67")}}</td>
+<td>
+<button type="button" class="copy compact-action" data-copy="{{value}}">{{_i("84b03702780e4858")}}</button>
+</td>
+<td>
+<a class="button compact-action" href="/scans?q={{value|urlencode}}">Pivot</a>
+</td>
+</tr>{% endfor %}{% endfor %}{% if not (report.indicators.urls or report.indicators.domains or report.indicators.ips or report.indicators.hashes) %}<tr>
+<td colspan="5">{{_i("c6d27176711d1943")}}</td>
+</tr>{% endif %}</tbody>
+</table>
+</div>
+</section>
+<section class="panel">
+<h2>{{_i("d26a137881153718")}}</h2>
+<p class="muted">{{_i("a14e29942991da44")}}</p>
+<div class="table-wrap">
+<table class="compact-table">
+<thead>
+<tr>
+<th>{{_i("9b0107ee09d45b66")}}</th>
+<th>IP</th>
+<th>Version</th>
+<th>Source</th>
+<th>{{_i("9ff92c31b520c38f")}}</th>
+</tr>
+</thead>
+<tbody>{% for item in resolved_ips %}<tr>
+<td>
+<code>{{item.domain}}</code>
+</td>
+<td>
+<code>{{item.ip}}</code>
+</td>
+<td>IPv{{item.version}}</td>
+<td>{{item.source}}</td>
+<td>{{item.observed_at}}</td>
+</tr>{% else %}<tr>
+<td colspan="5">{{_i("b077221f7ea84dcf")}}</td>
+</tr>{% endfor %}</tbody>
+</table>
+</div>
+</section>
+{% elif section=='threat_intelligence' %}<section class="metric-grid ti-metrics">
+<article>
+<span>{{_i("2c605a4f46b53386")}}</span>
+<strong>{{presentation.dns_domains}}</strong>
+</article>
+<article>
+<span>{{_i("7f04de392ce82944")}}</span>
+<strong>{{presentation.dns_providers}}</strong>
+</article>
+<article>
+<span>{{_i("4e829b9f8e3c935e")}}</span>
+<strong>{{presentation.security_signals|length}}</strong>
+</article>
+<article>
+<span>{{_i("c8a2a30e1bb522aa")}}</span>
+<strong>{{intelligence.ioc_matches|length}}</strong>
+</article>
+</section>
+{% if presentation.security_signals %}<section class="panel security-signals">
+<div class="panel-head">
+<div>
+<p class="eyebrow">{{_i("d1c932dc47c83ba7")}}</p>
+<h2>{{_i("3546ba19e60d41cd")}}</h2>
+</div>
+<span class="badge blocked">{{presentation.security_signals|length}} {{_i("0292920b8015ac03")}}</span>
+</div>
+<div class="signal-grid">{% for signal in presentation.security_signals %}<article>
+<h3>{{signal.domain}}</h3>
+<p>
+<b>{{_i("e5606d8ded576e47")}} {{signal.provider}}</b>
+</p>
+<dl class="signal-proof">
+<dt>{{_i("c42aba3814897341")}}</dt>
+<dd>{{signal.rcodes|join(', ')}} · {{signal.qtypes|join(' + ')}}</dd>
+<dt>{{_i("fa12e5a031a373f7")}}</dt>
+<dd>{% if signal.ede %}{% for item in signal.ede %}EDE {{item.code}}{{' — '~item.text if item.text and item.text != 'None'}}{{', ' if not loop.last}}{% endfor %}{% else %}{{_i("e195ea4fcf37c03b")}}{% endif %}</dd>
+<dt>Date</dt>
+<dd>{{signal.checked_at}}</dd>
+<dt>{{_i("98ffc16d85be7337")}}</dt>
+<dd>{{signal.request_count}} {{_i("07c94ab443c67177")}}</dd>
+</dl>
+<a href="?section=network&q={{signal.domain|urlencode}}">{{_i("7ff1f91bd0f90afc")}}</a>
+</article>{% endfor %}</div>
+</section>{% endif %}
+<section class="panel">
+<div class="panel-head">
+<div>
+<p class="eyebrow">{{_i("beea2bdbd8e3cfaf")}}</p>
+<h2>{{_i("202e9c6e2863abe4")}}</h2>
+</div>
+<span class="badge {{'completed' if intelligence.dns_results else 'partial'}}">{{_i("d83fe83c52d05b6e") if intelligence.dns_results else _i("2b1f05fae2c83d8b")}}</span>
+</div>
+<p class="notice">{{_i("cccc80a8c069621c")}}</p>{% for job in intelligence.jobs if job.kind=='dns' %}<p class="muted">{{_i("f2b6f3dc601ba2f2")}} {{job.status}} · {{job.domains_count}} {{_i("4587f7277af0676a")}} {{job.total_domains or job.domains_count}}{% if job.omitted_domains %} · {{job.omitted_domains}} {{_i("e5cfe26e270fdceb")}}{% endif %}</p>{% endfor %}<div class="table-wrap">
+<table class="dns-matrix compact-table">
+<thead>
+<tr>
+<th>{{_i("9b0107ee09d45b66")}}</th>{% for provider_id,provider in intelligence.providers.items() %}<th>{{provider.name}}</th>{% endfor %}</tr>
+</thead>
+<tbody>{% for row in intelligence.dns_matrix %}<tr class="{{'dns-attention' if row.blocked_count else ''}}">
+<td>
+<code>{{row.domain}}</code>{% if row.blocked_count %}<small>{{row.blocked_count}} {{_i("054917eebc58e723")}}</small>{% endif %}</td>{% for provider_id,provider in intelligence.providers.items() %}{% set observation=row.providers.get(provider_id) %}<td>{% if observation %}<div class="dns-state {{observation.interpretation}}">
+<b>{{_i("561d4ef5dad44d2d") if observation.interpretation=='blocked' else (_i("bd66cf1b2464f239") if observation.interpretation=='not_blocked_observed' else (_i("9d2c0eb7f22e074a") if observation.interpretation=='error' else _i("27336a867f1a81e3")))}}</b>
+<small>{{observation.rcode or observation.error or _i("39277123492abf83")}}</small>
+</div>{% else %}<span class="muted">{{_i("940d1c1bb1277396")}}</span>{% endif %}</td>{% endfor %}</tr>{% else %}<tr>
+<td colspan="7">{{_i("32fcf092645f6a07")}}</td>
+</tr>{% endfor %}</tbody>
+</table>
+</div>
+</section>
+<section class="panel">
+<h2>{{_i("c8a2a30e1bb522aa")}}</h2>
+<div class="table-wrap">
+<table class="compact-table">
+<thead>
+<tr>
+<th>Type</th>
+<th>IOC</th>
+<th>Observation</th>
+<th>{{_i("363dc228101c3a5e")}}</th>
+<th>Date</th>
+</tr>
+</thead>
+<tbody>{% for item in intelligence.ioc_matches %}<tr>
+<td>{{item.type}}</td>
+<td>
+<code>{{item.original_value}}</code>
+</td>
+<td>
+<code>{{item.observed_value}}</code>
+<small>{{ui(item.explanation)}}</small>
+</td>
+<td>{{item.category}}</td>
+<td>{{item.matched_at}}</td>
+</tr>{% else %}<tr>
+<td colspan="5">{{_i("cfd81ad555cf1a81")}}</td>
+</tr>{% endfor %}</tbody>
+</table>
+</div>
+</section>
+<section class="panel raw-evidence">
+<details>
+<summary>{{_i("c24d3d3dd6abddff")}} {{intelligence.dns_results|length}} {{_i("0ecf30b5a96171c1")}}</summary>
+<p class="muted">{{_i("75942a10b289ed7d")}}</p>
+<div class="dns-observation-list">{% for item in intelligence.dns_results %}<details>
+<summary>
+<code>{{item.domain}}</code> · {{item.provider_id}} · {{item.qtype}} · <span class="badge {{item.interpretation}}">{{item.interpretation}}</span>
+</summary>
+<dl class="details">
+<dt>{{_i("5c1535f4e204c809")}}</dt>
+<dd>{{item.provider_profile}} · {{item.method}}</dd>
+<dt>{{_i("c42aba3814897341")}}</dt>
+<dd>{{item.rcode or item.error or '—'}}</dd>
+<dt>{{_i("c24c06c3f7fd49d7")}}</dt>
+<dd>{{ui(item.justification)}}</dd>
+<dt>{{_i("2035e74079b91bbe")}}</dt>
+<dd>
+<code>{{item.answers|join(', ') if item.answers else _i("290106c8a56a482a")}}</code>
+</dd>
+<dt>Authority</dt>
+<dd>
+<pre>{{item.authority|tojson(indent=2)}}</pre>
+</dd>
+<dt>EDE</dt>
+<dd>
+<pre>{{item.ede|tojson(indent=2)}}</pre>
+</dd>
+<dt>Date</dt>
+<dd>{{item.checked_at}}</dd>
+</dl>
+</details>{% else %}<div class="empty">{{_i("8e6c239aac67f934")}}</div>{% endfor %}</div>
+</details>
+</section>{% endif %}{% endblock %}

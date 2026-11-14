@@ -1,0 +1,99 @@
+#!/bin/sh
+set -eu
+force_build=0
+prepare_only=0
+offline=0
+remove_archive=0
+image_archive=
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        --remove-image-archive) remove_archive=1;;
+        --offline) offline=1;;
+        --build) force_build=1;;
+        --build-only) force_build=1; prepare_only=1;;
+        --prepare-only) prepare_only=1;;
+        --load-images)
+            [ "$#" -ge 2 ] || { printf '%s\n' '--load-images requires an images.tar file.' >&2; exit 2; }
+            image_archive=$2
+            case "$image_archive" in /*) ;; *) image_archive="$(pwd)/$image_archive";; esac
+            shift;;
+        --help|-h)
+            printf '%s\n' 'Usage: sh start.dh [--offline] [--remove-image-archive] [--prepare-only] [--load-images FILE] [--build | --build-only]' \
+              'Use bundled images offline, or build missing images in a source checkout.' \
+              '--remove-image-archive Remove an imported image archive after successful preparation/start.' \
+              '--offline         Never build or download dependencies; use existing or bundled images.' \
+              '--prepare-only    Prepare images without starting services (also use before restoring).' \
+              '--load-images FILE Verify and import an offline images.tar with its adjacent .sha256 file.' \
+              '--build            Rebuild images from source (requires Internet and Buildx).' \
+              '--build-only       Build from source without starting services.'
+            exit 0;;
+        *) printf '%s\n' "Unknown option: $1. Run sh start.dh --help." >&2; exit 2;;
+    esac
+    shift
+done
+if { [ -n "$image_archive" ] || [ "$offline" -eq 1 ]; } && [ "$force_build" -eq 1 ]; then
+    printf '%s\n' '--load-images and --offline cannot be combined with a source build.' >&2; exit 2
+fi
+cd -- "$(dirname -- "$0")/application"
+. ./common.sh
+require_docker
+require_supported_host
+initialize_local_configuration
+required_images=$(compose config --images | sort -u)
+if [ "$force_build" -eq 0 ] && [ -z "$image_archive" ]; then
+    for image in $required_images; do
+        if ! image_available "$image"; then
+            if [ -f ../images.tar ]; then image_archive="$(pwd)/../images.tar"; fi
+            break
+        fi
+    done
+fi
+if [ -n "$image_archive" ]; then
+    [ -f "$image_archive" ] && [ -f "$image_archive.sha256" ] || {
+        printf '%s\n' 'The image archive and its adjacent .sha256 checksum are required.' >&2; exit 1;
+    }
+    (cd -- "$(dirname -- "$image_archive")" && sha256sum -c -- "$(basename -- "$image_archive").sha256")
+    docker image load --input "$image_archive"
+fi
+# A source checkout preserves the original first-start build behavior.
+# A release inventory identifies an offline bundle and forbids silent fallback.
+if [ "$force_build" -eq 0 ] && [ "$offline" -eq 0 ] && [ -z "$image_archive" ] && [ ! -f ../images.ids ]; then
+    for image in $required_images; do
+        if ! image_available "$image"; then force_build=1; break; fi
+    done
+fi
+if [ "$force_build" -eq 1 ]; then
+    docker buildx version >/dev/null || { printf '%s\n' 'Docker Buildx is required only for source builds.' >&2; exit 1; }
+    printf '%s\n' 'Building images from the visible source files.'
+    compose build
+else
+    for image in $required_images; do
+        if ! image_available "$image"; then
+            printf '%s\n' "Required prebuilt image is missing or differs from the offline bundle: $image" \
+              'Use the complete ODYSAFE offline bundle (images.tar and images.tar.sha256 beside start.dh).' \
+              'To build from source, use a source checkout and sh start.dh --build. No image download or build was attempted.' >&2
+            exit 1
+        fi
+    done
+fi
+cleanup_imported_archive() {
+    archive_to_remove=$image_archive
+    if [ -z "$archive_to_remove" ] && [ -f ../images.ids ] && [ -f ../images.tar ]; then
+        archive_to_remove="$(pwd)/../images.tar"
+    fi
+    if [ "$remove_archive" -eq 1 ] && [ "$force_build" -eq 0 ] && [ -n "$archive_to_remove" ]; then
+        rm -f -- "$archive_to_remove" "$archive_to_remove.sha256"
+        printf '%s\n' 'Imported archive removed. Installed Docker images and user data are preserved.'
+    fi
+}
+if [ "$prepare_only" -eq 1 ]; then
+    cleanup_imported_archive
+    printf '%s\n' 'Images are ready. No services were started. You can now restore a backup.'
+    exit 0
+fi
+compose up -d --no-build --pull never --wait --wait-timeout 240
+cleanup_imported_archive
+printf '%s\n' "ODYSAFE is ready: https://$(compose port web-gateway 8080)"
+printf '%s\n' 'Data and settings are stored in Docker volumes on this computer.'
+printf '%s\n' "Local configuration: $local_config_file"
+printf '%s\n' 'The complete application is started. Use the web interface to choose your capture mode.'

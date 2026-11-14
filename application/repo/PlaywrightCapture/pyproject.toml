@@ -1,0 +1,61 @@
+[project]
+name = "PlaywrightCapture"
+version = "1.43.1"
+description = "A simple library to capture websites using playwright"
+authors = [
+    {name="Raphaël Vinot", email= "raphael.vinot@circl.lu"}
+]
+license = "BSD-3-Clause"
+readme = "README.md"
+requires-python = ">=3.11,<3.16"
+
+dynamic = [ "classifiers" ]
+
+dependencies = [
+    "playwright (>=1.64.0)",
+    "beautifulsoup4[charset-normalizer,lxml] (>=4.15.0)",
+    "w3lib (>=2.5.0)",
+    "playwright-stealth (>=2.0.3)",
+    "aiohttp[speedups] (>=3.14.5)",
+    "aiohttp-socks (>=0.12.0)",
+    "typing-extensions (>=4.12.2,<5.0.0) ; python_version < \"3.12\"",
+    "dnspython (>=2.9.0,<3.0.0)",
+    "python-socks (>=3.0.0,<4.0.0)",
+    "rfc3161-client (>=1.0.4,<2.0.0)",
+    "orjson (>=3.12,<4.0.0)",
+    "pure-magic-rs (>=0.5.1)",
+    "lookyloo-models (>=0.5.0)",
+    "charset-normalizer (>=3.4.6,<4.0.0)",
+    "pyfaup-rs (>=0.4.26)"
+]
+
+[project.urls]
+Repository = "https://github.com/Lookyloo/PlaywrightCapture"
+Issues = "https://github.com/Lookyloo/PlaywrightCapture/issues"
+
+[tool.poetry]
+classifiers=[
+    'Intended Audience :: Science/Research',
+    'Intended Audience :: Telecommunications Industry',
+    'Topic :: Security',
+    'Topic :: Internet',
+]
+
+
+[project.optional-dependencies]
+recaptcha = [
+    "pydub-ng (>=0.2.0)",
+    "SpeechRecognition (>=3.17.0)"
+]
+
+[tool.poetry.group.dev.dependencies]
+types-beautifulsoup4 = "^4.12.0.20250516"
+pytest = "^9.1.1"
+mypy = "^2.4.0"
+types-dateparser = "^1.4.3.20260907"
+types-pytz = "^2026.5.0.20261006"
+
+
+[build-system]
+requires = ["poetry-core>=2.0"]
+build-backend = "poetry.core.masonry.api"

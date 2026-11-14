@@ -1,0 +1,63 @@
+{
+  "schema_version": "1.0",
+  "rules": [
+    {
+      "id": "behavior.eval_observed",
+      "version": 1,
+      "description": "A direct eval call was observed; this is a technical observation, not a malware verdict.",
+      "category": "dynamic_javascript",
+      "severity": "info",
+      "confidence": "high",
+      "active": true,
+      "source": "browser_event",
+      "condition": {"operator": "event_present", "event_type": "eval"},
+      "evidence_field": "id"
+    },
+    {
+      "id": "behavior.clipboard_command",
+      "version": 1,
+      "description": "Clipboard text contains an explicitly observed command interpreter marker.",
+      "category": "suspicious_clipboard_content",
+      "severity": "medium",
+      "confidence": "medium",
+      "active": true,
+      "source": "browser_event",
+      "condition": {
+        "operator": "event_field_contains_any",
+        "event_type": "clipboard.writeText",
+        "field": "text_preview",
+        "patterns": ["powershell", "pwsh", "cmd.exe"]
+      },
+      "evidence_field": "id"
+    },
+    {
+      "id": "behavior.eval_encoded_content",
+      "version": 1,
+      "description": "An eval argument contains an explicitly observed decoding primitive.",
+      "category": "dynamic_javascript_obfuscation",
+      "severity": "low",
+      "confidence": "medium",
+      "active": true,
+      "source": "browser_event",
+      "condition": {
+        "operator": "event_field_contains_any",
+        "event_type": "eval",
+        "field": "argument_preview",
+        "patterns": ["atob(", "fromcharcode("]
+      },
+      "evidence_field": "id"
+    },
+    {
+      "id": "behavior.hidden_iframe",
+      "version": 1,
+      "description": "The captured DOM contains an iframe with an explicit hiding attribute or style.",
+      "category": "hidden_iframe",
+      "severity": "low",
+      "confidence": "high",
+      "active": true,
+      "source": "dom",
+      "condition": {"operator": "dom_hidden_iframe"},
+      "evidence_field": "element_index"
+    }
+  ]
+}

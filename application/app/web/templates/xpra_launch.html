@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="{{'en' if request.cookies.get('odysafe_language')=='en' else 'fr'}}"><head><meta charset="utf-8"><meta name="referrer" content="strict-origin"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{{_a("7f0f050cd609ace5")}}</title></head>
+<body>
+<h1>{{_i("b7cb56ddc3766ede") if not error else _i("92eeb819e732b453")}}</h1>
+<p role="status">{{ui(error) if error else _i("533e16989408cf6e")}}</p>
+{% if ticket %}
+<form id="launch" method="post" action="{{gateway}}/odysafe-connect">
+<input type="hidden" name="ticket" value="{{ticket}}"><input type="hidden" name="navigation" value="1"><input type="hidden" name="session_id" value="{{session_id}}"><input type="hidden" name="attempt" value="{{attempt}}"><button>{{_i("e531db6c51d5c555")}}</button>
+</form>
+{% elif auto_submit or retryable %}
+<form id="launch" method="post" action="/sessions/{{session_id}}/xpra-access"><input type="hidden" name="csrf" value="{{csrf}}"><input type="hidden" name="attempt" value="{{attempt+1 if retryable else attempt}}"><button>{{_i("c792de9865808627")}}</button></form>
+{% endif %}
+{% if scan_id %}<p><a href="/scans/{{scan_id}}">{{_i("ec548c52c6bc6207")}}</a></p>{% endif %}
+<p><a href="/sessions?focus={{session_id}}">{{_i("bae44e2e952f972e")}}</a> · <a href="/">{{_i("da4ae1fdbd30a273")}}</a></p>
+{% if auto_submit or (retryable and attempt<5) %}<script nonce="launch">setTimeout(()=>document.getElementById('launch').requestSubmit(),{{2000 if retryable else 0}});</script>{% elif retryable %}<p>{{_i("7918660e5f53cbb3")}}</p>{% endif %}
+</body></html>

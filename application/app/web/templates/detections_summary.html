@@ -1,0 +1,51 @@
+<section class="detection-overview" aria-label="{{_a("a1257641bc184703")}}" data-i18n-aria-label="Résumé des moteurs de détection">
+  <article class="detection-engine-card yara-card">
+    <header><div><p class="eyebrow">{{_i("1e56d5ddaf6a1b8a")}}</p><h2>YARA-X</h2></div><span class="badge {{analysis_states.yara_x}}">{{ui(analysis_states.yara_x|replace('_',' '))}}</span></header>
+    <div class="engine-numbers"><div><strong>{{presentation.yara_rules_tested}}</strong><span>{{_i("3d9c28f41618d3b9")}}</span></div><div><strong>{{presentation.yara_artifacts_tested}}</strong><span>{{_i("d28378926e1eb7f5")}}</span></div><div><strong>{{presentation.yara_matches}}</strong><span>{{_i("0ba99532a5c73d89")}}</span></div></div>
+    <p>{{_i("e2ca10693d560c6f")}}</p>
+  </article>
+  <article class="detection-engine-card ioc-card">
+    <header><div><p class="eyebrow">{{_i("3b12a6c113ae277c")}}</p><h2>IOC</h2></div><span class="badge {{analysis_states.ioc}}">{{ui(analysis_states.ioc|replace('_',' '))}}</span></header>
+    <div class="engine-numbers"><div><strong>{{presentation.ioc_indicators_tested}}</strong><span>{{_i("2b4105e7c1fec92c")}}</span></div><div><strong>{{presentation.ioc_passes}}</strong><span>{{_i("0bdf6263e4633967")}}</span></div><div><strong>{{presentation.ioc_matches}}</strong><span>{{_i("0ba99532a5c73d89")}}</span></div></div>
+    <p>{{_i("e228ed2ce1a86006")}}</p>
+  </article>
+  <article class="detection-engine-card dns-card">
+    <header><div><p class="eyebrow">{{_i("3a01279d74af0277")}}</p><h2>DNS Security</h2></div><span class="badge {{analysis_states.dns}}">{{ui(analysis_states.dns|replace('_',' '))}}</span></header>
+    <div class="engine-numbers"><div><strong>{{presentation.dns_domains}}</strong><span>{{_i("adfd604940dd425d")}}</span></div><div><strong>{{presentation.dns_providers}} / {{presentation.dns_provider_total}}</strong><span>{{_i("19c7e4fdae6b55a3")}}</span></div><div><strong>{{presentation.dns_responses}}</strong><span>{{_i("f5fba188316d3d99")}}</span></div></div>
+    <p>{{_i("86a3ac33ce772142")}}</p>
+  </article>
+</section>
+
+<section class="panel domain-coverage compact-domain-coverage">
+  <div class="panel-head"><div><p class="eyebrow">{{_i("900b1909daaf7fe6")}}</p><h2>{{_i("737e65967e3c741b")}}</h2></div></div>
+  <p class="notice">{{_i("ddc29d631396342e")}}</p>
+  <div class="table-wrap"><table class="compact-table domain-coverage-table"><thead><tr><th>{{_i("9b0107ee09d45b66")}}</th><th>YARA-X</th><th>IOC</th><th>DNS Security</th></tr></thead><tbody>
+  {% for item in presentation.domain_analysis_coverage %}<tr><td><code title="{{item.domain}}" data-i18n-title="{{item.domain}}">{{item.domain}}</code><a href="?section=network&q={{item.domain|urlencode}}">{{_i("db9f0635def18cb3")}}</a></td>
+    <td><span class="badge {{item.yara.status}}">{{ui(item.yara.label)}}</span><small>{{item.yara.succeeded}} {{_i("a8c622ee49ee334e")}} {{item.yara.matches}} {{_i("d7497657b23c200b")}}</small></td>
+    <td><span class="badge {{item.ioc.status}}">{{ui(item.ioc.label)}}</span><small>{{item.ioc.matches}} {{_i("d7497657b23c200b")}}</small></td>
+    <td><span class="badge {{item.dns.status}}">{{ui(item.dns.label)}}</span><small>{{item.dns.providers}} {{_i("f06fb083172e908d")}} {{item.dns.signals}} {{_i("9ef96f6e574ab9bb")}}</small></td></tr>
+  {% else %}<tr><td colspan="4">{{_i("fdafc32f67db8427")}}</td></tr>{% endfor %}</tbody></table></div>
+</section>
+
+<section class="panel reanalysis-card">
+  <div class="reanalysis-copy">
+    <p class="eyebrow">{{_i("f64c75afbb3ab2a8")}}</p>
+    <h2>{{_i("81bf1dcf6da88dd0")}}</h2>
+    <p>{{_i("00100540fd95dcc0")}}</p>
+  </div>
+  <ol class="reanalysis-steps">
+    <li><span>1</span><div><b>{{_i("5f8ca5a2ed44033a")}}</b><small>{{_i("add6e9d3b8d6b20e")}}</small></div></li>
+    <li><span>2</span><div><b>{{_i("9918e6df4b3973c0")}}</b><small>{{_i("0cbeee267703e49d")}}</small></div></li>
+    <li><span>3</span><div><b>{{_i("3a3da87fa8c06510")}}</b><small>{{_i("7552f3334e23e5e5")}}</small></div></li>
+  </ol>
+  <div class="reanalysis-actions">
+    <a class="button" href="/engines/yara">{{_i("562c2d925a1aab53")}}</a>
+    <a class="button" href="/engines/ioc">{{_i("d322f4c750db2833")}}</a>
+    <form method="post" action="/scans/{{scan_id}}/reanalyze" class="engine-rerun-form"><input type="hidden" name="csrf" value="{{csrf}}"><fieldset><legend>{{_i("ba6f15788e1f7628")}}</legend><label><input type="checkbox" name="yara" value="true" checked> YARA-X</label><label><input type="checkbox" name="ioc" value="true" checked> IOC</label><label><input type="checkbox" name="dns" value="true"> DNS</label></fieldset><button class="primary">{{_i("fb061641d9ab964e")}}</button></form>
+  </div>
+  <p class="muted reanalysis-limit">{{_i("e50725dad91ae2da")}}</p>
+</section>
+
+<section class="panel"><div class="panel-head"><div><p class="eyebrow">{{_i("5cd28d3c102a701c")}}</p><h2>{{_i("088cfbd4124bcce2")}}</h2></div></div>
+{% for finding in report.detections %}<article class="finding"><header><span class="badge severity-{{finding.severity}}">{{ui(finding.severity)}}</span><b>{{finding.rule_id}}</b><span>{{finding.engine}}</span></header><p>{{finding.description}}</p><pre>{{finding.evidence|tojson(indent=2)}}</pre></article>{% else %}<div class="empty">{{_i("63b632a9c757b927")}}</div>{% endfor %}
+</section>

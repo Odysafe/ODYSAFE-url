@@ -1,0 +1,25 @@
+images/
+*.tar
+*.tar.gz
+.git
+**/.git
+**/__pycache__
+**/.pytest_cache
+**/.codex
+**/.agents
+**/.aws
+**/.history
+**/*.pyc
+*.env
+.env
+backups/
+
+# Distribution bundles and local runtime data never enter image builds.
+**/dist
+**/*.sqlite
+**/*.sqlite3
+**/*.db
+**/*.har
+**/*.key
+**/*.pem
+**/installation.env

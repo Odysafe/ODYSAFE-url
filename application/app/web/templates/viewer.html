@@ -1,0 +1,5 @@
+{% extends 'base.html' %}{% block title %}{{_a("0a01ca3c43c8e85c")}}{% endblock %}{% block heading %}{{_i("1716b338d8033781")}}{% endblock %}{% block content %}
+<nav class="breadcrumbs"><a href="/scans/{{scan_id}}?section=artifacts">Investigation</a><span>/</span><code>{{artifact_name}}</code></nav>
+<section class="panel"><div class="panel-head"><div><h2>{{artifact_name}}</h2><small>{{line_count}} {{_i("f8e6c97b4c1574c8")}} <code>{{sha256}}</code></small></div><div class="button-row"><button type="button" data-copy-target="source-content">{{_i("84b03702780e4858")}}</button><a class="button" href="/scans/{{scan_id}}/artifact/{{artifact_name}}">Original</a></div></div>
+<label>{{_i("733d1c742675f537")}}<input type="search" data-code-search placeholder="{{_a("a6f212f74544b0b0")}}" data-i18n-placeholder="Texte ou expression littérale"></label>
+<pre id="source-content" hidden>{{content}}</pre><ol class="safe-source" data-code-view data-language="{{ 'javascript' if artifact_name.endswith('.js') else 'text' }}">{% for line in content_lines %}<li><code>{{line}}</code></li>{% endfor %}</ol><p class="notice">{{_i("3e29ec56b93c6d33")}}</p></section>{% endblock %}

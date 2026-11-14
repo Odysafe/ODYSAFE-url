@@ -1,0 +1,14 @@
+{% if engine=='dns' %}
+<form method="post" action="/engines/{{engine}}/analyze" data-analysis-form>
+<input type="hidden" name="csrf" value="{{csrf}}">
+{% if engine!='dns' %}
+<section class="panel"><p class="eyebrow">{{_i("d1d56fb0bc3c7e66")}}</p><h2>{{_i("b18b7ab246780a69") if engine=='yara' else _i("b7b54773f4ddbbc0")}}</h2><p class="muted">{{_i("dfccaa169857017f")}}</p><label class="analysis-option"><input type="checkbox" name="include_inactive" value="true" data-include-inactive> {{_i("ca65f362123017be")}}</label>
+{% for group in analysis_groups %}<details class="analysis-group" open><summary><label><input type="checkbox" data-analysis-group> {{folder_name(group)}}</label> <small>{{group['items']|length}} {{_i("ad67b2865b919537")}}</small></summary><div>{% for item in group['items'] %}<label class="analysis-choice"><input type="checkbox" name="selected" value="{{item.id}}" data-analysis-item data-unusable="{{'true' if engine=='yara' and item.last_error else 'false'}}" data-active="{{'true' if item.active else 'false'}}" {% if item.id in preselected|default([]) and item.active %}checked{% endif %} {% if not item.active or (engine=='yara' and item.last_error) %}disabled{% endif %}><span>{{item.name if engine=='yara' else item.original_value}}<small>{{'Active' if item.active else 'Inactive'}}{% if engine=='yara' and item.last_error %} {{_i("fcee11ceb744566a")}}{% endif %}</small></span></label>{% else %}<p class="muted">{{_i("f9a91b93381dc8f6")}}</p>{% endfor %}</div></details>{% endfor %}
+</section>
+{% endif %}
+<section class="panel"><p class="eyebrow">{{'1' if engine=='dns' else '2'}} {{_i("94984382788ca66a")}}</p><h2>{{_i("4a09041c1a147337") if engine=='dns' else _i("22781a1ec2362495")}}</h2><input type="search" data-scan-search aria-label="{{_a("32f72ab6dfff2101")}}" placeholder="{{_a("5edbfb051f6b979d")}}" data-i18n-aria-label="Rechercher une investigation" data-i18n-placeholder="Ex. example.org ou identifiant de l’investigation"><p class="muted">{{_i("a8637d525c613c1e") if engine=='dns' else _i("3c6d210ca3102333")}} {{_i("0be0acfcee3f1220")}}</p><div class="scan-choice-grid">{% for scan in recent_scans %}<label class="scan-choice" data-scan-choice><input type="checkbox" name="scan_ids" value="{{scan.scan_id}}"><span><b>{{scan.host or _i("416b5f026c329886")}}</b><small>{{scan.submitted_url or scan.scan_id}}</small><small>{{scan.capture_date or _i("d394889e9a0456f6")}}</small></span></label>{% else %}<div class="empty">{{_i("2008e1a751a6db61")}} <a href="/">{{_i("1e38405391bded0b")}}</a></div>{% endfor %}</div>
+</section>
+<div class="analysis-footer"><span data-analysis-count>{{_i("ada7e7b32886984f")}}</span><button class="primary" {% if not recent_scans %}disabled{% endif %}>{{_i("8ae961fdd2c57b5e")}}</button></div>
+</form>
+
+{% else %}{% include 'library_analyze.html' %}{% endif %}

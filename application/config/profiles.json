@@ -1,0 +1,19 @@
+{
+  "default_profile": "desktop",
+  "profiles": {
+    "desktop": {
+      "browser": "chromium", "user_agent": null,
+      "viewport": {"width": 1366, "height": 768},
+      "locale": "fr-FR", "timezone": "Europe/Paris", "referer": null,
+      "timeout_ms": 30000, "wait_after_load_ms": 1000, "headless": true,
+      "instrumentation": {"enabled": true}
+    },
+    "mobile": {
+      "browser": "chromium", "user_agent": null,
+      "viewport": {"width": 390, "height": 844},
+      "locale": "fr-FR", "timezone": "Europe/Paris", "referer": null,
+      "timeout_ms": 30000, "wait_after_load_ms": 1000, "headless": true,
+      "instrumentation": {"enabled": true}
+    }
+  }
+}
