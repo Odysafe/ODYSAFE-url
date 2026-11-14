@@ -129,11 +129,11 @@ The interface is available in **English** and **French**.
 
 <br>
 
-## Quick start · pick your path
+## Quick start · choose an installation method
 
 **Choose one installation method. Both run the same application.**
 
-| 🛠️ **A · From source** | 📦 **B · Offline package** |
+| **A · From source** | **B · Offline package** |
 |:--|:--|
 | **I want the source code and to rebuild updates myself.** | **I want the tools already installed, ready to start.** |
 | Clone the repository; Docker builds the application. | Download the complete release; Docker imports the images. |
@@ -141,13 +141,51 @@ The interface is available in **English** and **French**.
 | Start command: **`./start.dh`** | Start command: **`./start.dh --offline`** |
 | [**↓ Copy the source commands**](#install-source) | [**↓ Copy the offline commands**](#install-offline) |
 
-> **For either method:** Linux amd64 with AppArmor, Docker Engine 25+ and Docker Compose 2.20.2+. Public captures and external DNS checks require Internet access.
+> **Before either method:** prepare the host with the prerequisites below. Public captures and external DNS checks require Internet access.
+
+### Host preparation (before `git clone` or package extraction)
+
+ODYSAFE-URL is designed for a dedicated Linux amd64/x86_64 machine or virtual machine. The project is installed in the directory where you clone or extract it; Docker stores images and persistent data in its own local Docker storage.
+
+Recommended resources:
+
+| Resource | Minimum | Recommended |
+|:--|:--|:--|
+| Memory | 4 GB RAM | 8 GB RAM or more |
+| Free disk space | 10 GB for a source build | 20 GB for source builds, captures and backups |
+| Processor | 2 amd64/vCPU cores | 4 cores or more |
+
+Install the host packages on Debian or Ubuntu:
+
+```bash
+sudo apt update
+sudo apt install -y ca-certificates curl git docker.io docker-compose-plugin
+sudo systemctl enable --now docker
+sudo usermod -aG docker "$USER"
+```
+
+Apply the Docker group change by signing out and signing in again, or run:
+
+```bash
+newgrp docker
+docker version
+docker compose version
+```
+
+For a source installation, also verify Buildx and AppArmor:
+
+```bash
+docker buildx version
+sudo aa-status
+```
+
+If Docker is already installed, do not reinstall it; only verify that the versions satisfy the requirements below.
 
 ---
 
 <a id="install-source"></a>
 
-### 🛠️ A · Install from source
+### A · Install from source
 
 **Use this to inspect, customize or rebuild the application from the Git repository.**
 
@@ -184,7 +222,7 @@ This retrieves the project changes and rebuilds the images. It does not automati
 
 <a id="install-offline"></a>
 
-### 📦 B · Install the offline package
+### B · Install the offline package
 
 **Use this to start a prepared release without compiling or downloading its dependencies.**
 
@@ -246,7 +284,7 @@ Keep the downloaded release archive if you need to reinstall offline.
 
 ---
 
-### ✅ Open the interface
+### Open the interface
 
 For **either installation method**, wait until the terminal prints `ODYSAFE is ready`, then open:
 
@@ -288,6 +326,9 @@ https://localhost:8443
 | Docker Buildx | Required only for a source build |
 | Internet access | Required for source installation, public captures and external DNS checks; unnecessary for offline installation |
 | Browser | A modern desktop browser for the local interface |
+| Installation location | Any local directory owned by the installing user; avoid network shares and removable media |
+| Memory | 4 GB minimum; 8 GB or more recommended for interactive captures |
+| Disk space | At least 10 GB free for source builds; 20 GB recommended for evidence and backups |
 
 <details>
 <summary><b>Check your Docker setup</b></summary>
